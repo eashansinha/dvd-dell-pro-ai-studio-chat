@@ -21,7 +21,38 @@ This directory contains automated tests for the RAG (Retrieval Augmented Generat
 
 ## Running Tests
 
-Before running tests, install the dependencies:
+### Unit Tests
+
+The application now includes comprehensive unit testing for both frontend and backend:
+
+#### Frontend Unit Tests (Vitest)
+```bash
+yarn test:unit                 # Run tests in watch mode
+yarn test:unit:coverage        # Run tests with coverage report
+yarn test:unit:ui              # Run tests with UI interface
+yarn test:unit:watch           # Run tests in watch mode
+```
+
+Coverage reports are generated in the `coverage/` directory with HTML, LCOV, JSON, and text formats.
+Coverage threshold is set to 80% for branches, functions, lines, and statements.
+
+#### Backend Unit Tests (pytest-cov)
+```bash
+yarn backend:test:coverage     # Run with coverage report
+yarn backend:test:unit         # Run unit tests only
+```
+
+Coverage reports are generated in `backend/htmlcov/` directory.
+Coverage threshold is set to 80%.
+
+#### Combined Coverage
+```bash
+yarn test:coverage:all         # Run both frontend and backend coverage
+```
+
+### E2E Tests
+
+Before running E2E tests, install the dependencies:
 
 ```bash
 # Install dependencies
@@ -31,7 +62,7 @@ yarn install
 yarn generate-fixtures
 ```
 
-To run the tests:
+To run the E2E tests:
 
 ```bash
 # Run all tests
@@ -139,7 +170,29 @@ The tests are configured to run in GitHub Actions on pull requests and pushes to
 
 ## Test Coverage
 
-Current test coverage includes:
+### Unit Test Coverage
+
+**Frontend (Vitest + React Testing Library)**:
+- React components and their interactions
+- Utility functions and helpers
+- State management (Redux store)
+- API client functions
+- Service layer functions
+- Coverage threshold: 80% (branches, functions, lines, statements)
+- Reports: HTML (`coverage/index.html`), LCOV, JSON, text
+
+**Backend (pytest-cov)**:
+- API endpoints and route handlers
+- Business logic and service functions
+- Data models and validation
+- Database operations
+- Error handling
+- Coverage threshold: 80%
+- Reports: HTML (`backend/htmlcov/index.html`), XML, terminal
+
+### E2E Test Coverage
+
+Current E2E test coverage includes:
 
 - Basic chat interactions
 - Message input and display
@@ -156,9 +209,26 @@ Current test coverage includes:
 
 ## Adding New Tests
 
-When adding new tests:
+### Adding Unit Tests
+
+**Frontend Unit Tests**:
+1. Create `*.test.tsx` files alongside React components
+2. Create `*.test.ts` files alongside utility functions
+3. Use React Testing Library for component testing
+4. Mock external dependencies (APIs, services)
+5. Test both success and error scenarios
+
+**Backend Unit Tests**:
+1. Add tests in `backend/app/tests/` directory
+2. Use pytest fixtures for test setup
+3. Mock external services and databases
+4. Test API endpoints, business logic, and data models
+
+### Adding E2E Tests
+
+When adding new E2E tests:
 
 1. Follow the existing patterns and naming conventions
 2. Use the helper functions in `utils/test-helpers.ts`
 3. Create fixtures in the `fixtures` directory as needed
-4. Add the new test to the appropriate test category 
+4. Add the new test to the appropriate test category   
