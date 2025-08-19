@@ -25,6 +25,7 @@ export default defineConfig({
       categories: ['productivity', 'business'],
       start_url: '/',
       scope: '/',
+      id: '/',
     },
 
     workbox: {
@@ -33,6 +34,7 @@ export default defineConfig({
       clientsClaim: true,
       skipWaiting: true,
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+      mode: 'production',
       
       // Runtime caching strategies
       runtimeCaching: [
