@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-import { store } from '../store/store';
 import { getSettings, saveSettings } from '../utils/settings';
+import { ProviderService, AIProvider } from './ProviderService';
 
 interface Model {
   id: string;
@@ -33,8 +33,10 @@ interface FetchModelsResult {
 }
 
 export class ModelService {
-  static async fetchModels(apiBaseUrl: string, apiKey: string, silent = false): Promise<FetchModelsResult> {
-    if (!apiBaseUrl || !apiKey) {
+  static async fetchModels(provider: AIProvider, _silent = false): Promise<FetchModelsResult> {
+    const config = ProviderService.getProviderConfig(provider);
+    
+    if (!config.baseUrl || (config.requiresAuth && !config.apiKey)) {
       return {
         success: false,
         message: 'API URL and key are required'
@@ -42,27 +44,34 @@ export class ModelService {
     }
 
     try {
-      // Add timeout to handle offline scenarios better
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      const response = await fetch(`${apiBaseUrl}/models`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        signal: controller.signal
-      });
+      let models: string[] = [];
       
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
+      if (provider === 'ollama') {
+        models = await ProviderService.fetchOllamaModels(config.baseUrl);
+        clearTimeout(timeoutId);
+      } else {
+        const response = await fetch(`${config.baseUrl}${config.modelsEndpoint}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+        }
+        
         const data = await response.json();
         console.log('Fetched models:', data);
         
         const mappedModels = data.data.map((model: any) => {
-          // Extract compute location tag from model ID
           let tag = null;
           const id = model.id;
           
@@ -80,10 +89,8 @@ export class ModelService {
             tag = 'CPU';
           }
           
-          // Determine if model is a text generation model
           const isTextToTextModel = model.capability === 'TextToText' || model.capability === 'TextToTextWithTools';
           
-          // Extract base model name (without compute prefix)
           let baseName = id;
           const prefixes = ['public-cloud/', 'private-cloud/', 'GPU/', 'NPU/', 'CPU/', 'dNPU/'];
           for (const prefix of prefixes) {
@@ -102,75 +109,102 @@ export class ModelService {
           };
         });
         
-        // Deduplicate models by base name, preferring TextToTextWithTools over TextToText
         const modelMap = new Map<string, Model>();
         mappedModels.forEach((model: Model) => {
           const existing = modelMap.get(model.id);
           if (!existing) {
             modelMap.set(model.id, model);
           } else {
-            // If the new model has TextToTextWithTools and existing has only TextToText, replace
             if (model.capability === 'TextToTextWithTools' && existing.capability === 'TextToText') {
               modelMap.set(model.id, model);
             }
           }
         });
         
-        // Convert back to array
-        const models = Array.from(modelMap.values());
-        
-        // Create modelTags and modelCapabilities maps
-        const modelTags = models.reduce((acc: Record<string, string>, model: Model) => {
-          if (model.tag) {
-            acc[model.id] = model.tag;
-          }
-          return acc;
-        }, {});
-        
-        const modelCapabilities = models.reduce((acc: Record<string, string>, model: Model) => {
-          if (model.capability) {
-            acc[model.id] = model.capability;
-          }
-          return acc;
-        }, {});
-        
-        // Get current settings to determine enabled models
-        const savedSettings = getSettings();
-        const currentEnabledModels = savedSettings.enabledModels || {};
-        const updatedEnabledModels = { ...currentEnabledModels };
-        
-        // Set enabled state based on model capabilities
-        models.forEach((model: Model) => {
-          // If model is not a text generation model, ensure it's disabled
-          if (!model.isTextToTextModel) {
-            updatedEnabledModels[model.id] = false;
-          } 
-          // If it is a text generation model and not already in settings, default to enabled
-          else if (updatedEnabledModels[model.id] === undefined) {
-            updatedEnabledModels[model.id] = true;
+        const modelArray = Array.from(modelMap.values());
+        models = modelArray.map(model => model.id);
+      }
+      
+      const modelTags: Record<string, string> = {};
+      const modelCapabilities: Record<string, string> = {};
+      const updatedEnabledModels: Record<string, boolean> = {};
+      
+      if (provider === 'ollama') {
+        models.forEach(modelId => {
+          modelTags[modelId] = 'local';
+          modelCapabilities[modelId] = 'TextToText';
+          updatedEnabledModels[modelId] = true;
+        });
+      } else {
+        const response = await fetch(`${config.baseUrl}${config.modelsEndpoint}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
           }
         });
         
-        return {
-          success: true,
-          message: `Connection successful! Found ${models.length} models.`,
-          models: models.map(model => model.id),
-          modelTags,
-          modelCapabilities,
-          updatedEnabledModels
-        };
-      } else {
-        return {
-          success: false,
-          message: `Error: HTTP ${response.status} - ${response.statusText}`
-        };
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const mappedModels = data.data.map((model: any) => {
+          let tag = null;
+          const id = model.id;
+          
+          if (id.startsWith('public-cloud/')) {
+            tag = 'public-cloud';
+          } else if (id.startsWith('private-cloud/')) {
+            tag = 'private-cloud';
+          } else if (id.startsWith('GPU/')) {
+            tag = 'GPU';
+          } else if (id.startsWith('NPU/')) {
+            tag = 'NPU';
+          } else if (id.startsWith('dNPU/')) {
+            tag = 'dNPU';
+          } else {
+            tag = 'CPU';
+          }
+          
+          const isTextToTextModel = model.capability === 'TextToText' || model.capability === 'TextToTextWithTools';
+          
+          return {
+            id: id,
+            tag: tag,
+            capability: model.capability || null,
+            isTextToTextModel: isTextToTextModel
+          };
+        });
+        
+        mappedModels.forEach((model: any) => {
+          if (model.tag) {
+            modelTags[model.id] = model.tag;
+          }
+          if (model.capability) {
+            modelCapabilities[model.id] = model.capability;
+          }
+          if (model.isTextToTextModel) {
+            updatedEnabledModels[model.id] = true;
+          } else {
+            updatedEnabledModels[model.id] = false;
+          }
+        });
       }
+      
+      return {
+        success: true,
+        message: `Connection successful! Found ${models.length} models.`,
+        models,
+        modelTags,
+        modelCapabilities,
+        updatedEnabledModels
+      };
     } catch (error) {
-      // Check if it's an abort error (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
         return {
           success: false,
-          message: 'Connection timeout - Dell Pro AI Studio may be starting up or offline'
+          message: 'Connection timeout - Service may be starting up or offline'
         };
       }
       
@@ -186,18 +220,21 @@ export class ModelService {
    */
   static async initializeModels(): Promise<void> {
     const savedSettings = getSettings();
+    const provider = savedSettings.aiProvider || 'dell-pro-ai-studio';
     
-    // Only fetch if we have API settings and no models cached
-    if (savedSettings.apiBaseUrl && savedSettings.apiKey && (!savedSettings.availableModels || savedSettings.availableModels.length === 0)) {
-      console.log('Fetching models on app initialization...');
+    const hasValidConfig = provider === 'ollama' 
+      ? savedSettings.ollamaBaseUrl
+      : savedSettings.apiBaseUrl && savedSettings.apiKey;
+      
+    if (hasValidConfig && (!savedSettings.availableModels || savedSettings.availableModels.length === 0)) {
+      console.log(`Fetching models for provider: ${provider}`);
       
       let result: FetchModelsResult | null = null;
       let retryCount = 0;
       const maxRetries = 3;
       
-      // Retry logic for better offline/startup handling
       while (retryCount < maxRetries && (!result || !result.success)) {
-        result = await this.fetchModels(savedSettings.apiBaseUrl, savedSettings.apiKey, true);
+        result = await this.fetchModels(provider, true);
         
         if (!result.success && retryCount < maxRetries - 1) {
           console.log(`Model fetch attempt ${retryCount + 1} failed, retrying in 2 seconds...`);
@@ -209,7 +246,6 @@ export class ModelService {
       }
       
       if (result && result.success && result.models) {
-        // Update settings with fetched models
         const updatedSettings = {
           ...savedSettings,
           availableModels: result.models,
@@ -218,7 +254,6 @@ export class ModelService {
           enabledModels: result.updatedEnabledModels || {}
         };
         
-        // If no default model is set, set the first enabled text generation model as default
         if (!updatedSettings.defaultModel) {
           const firstEnabledModel = result.models.find(modelId => 
             result.updatedEnabledModels?.[modelId] === true
@@ -231,7 +266,6 @@ export class ModelService {
         
         saveSettings(updatedSettings);
         
-        // Dispatch event to notify components with the updated model info
         window.dispatchEvent(new CustomEvent('settings-updated', { 
           detail: { defaultModel: updatedSettings.defaultModel }
         }));
@@ -242,4 +276,4 @@ export class ModelService {
       }
     }
   }
-} 
+}        

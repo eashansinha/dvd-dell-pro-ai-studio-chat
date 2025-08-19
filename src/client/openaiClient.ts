@@ -15,12 +15,15 @@
 import OpenAI from 'openai';
 import { DocumentReference } from '../db/types';
 import { getSettings } from '../utils/settings';
+import { ProviderService } from '../services/ProviderService';
 
 const settings = getSettings();
+const provider = settings.aiProvider || 'dell-pro-ai-studio';
+const effectiveApiUrl = ProviderService.getEffectiveApiUrl(provider);
 
 const openai = new OpenAI({
-    apiKey: settings.apiKey,
-    baseURL: settings.apiBaseUrl,
+    apiKey: settings.apiKey || 'not-required-for-ollama',
+    baseURL: effectiveApiUrl,
     dangerouslyAllowBrowser: true,
 });
 

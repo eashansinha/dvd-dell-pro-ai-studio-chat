@@ -16,6 +16,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { MultiVectorRAG } from './multiVectorRag';
 import { DocumentReference } from '../db/types';
 import { getSettings } from '../utils/settings';
+import { ProviderService } from '../services/ProviderService';
 
 // Store the most recent document references for UI display
 let lastReferences: DocumentReference[] = [];
@@ -133,11 +134,12 @@ export async function callRAGCompletion(
     
     console.log('Final message count:', messages.length);
     
-    // Initialize the LLM
-    const apiBaseUrl = settings.apiBaseUrl;
-    const apiKey = settings.apiKey;
+    // Initialize the LLM with provider-aware configuration
+    const provider = settings.aiProvider || 'dell-pro-ai-studio';
+    const apiBaseUrl = ProviderService.getEffectiveApiUrl(provider);
+    const apiKey = provider === 'ollama' ? 'not-required' : settings.apiKey;
     
-    console.log('Initializing LLM with API URL:', apiBaseUrl);
+    console.log('Initializing LLM with provider:', provider, 'API URL:', apiBaseUrl);
     
     const llm = new ChatOpenAI({
       modelName: modelId,
@@ -148,7 +150,6 @@ export async function callRAGCompletion(
       callbacks: [
         {
           handleLLMNewToken(token) {
-            // Check if aborted during streaming
             if (abortSignal?.aborted) {
               console.log('Stream aborted by user');
               return;
@@ -156,7 +157,6 @@ export async function callRAGCompletion(
             onToken(token);
           },
           handleLLMEnd() {
-            // Don't call onDone here, we'll call it after invoke with documentReferences
             console.log('LLM generation completed');
           },
           handleLLMError(error: any) {
@@ -209,4 +209,4 @@ async function callFallbackCompletion(
   // Call the original OpenAI client
   const { callOpenAICompletion } = await import('./openaiClient');
   return callOpenAICompletion(userPrompt, previousMessages, modelId, onToken, onDone, abortSignal);
-} 
+}  
