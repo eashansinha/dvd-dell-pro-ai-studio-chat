@@ -1,7 +1,7 @@
 import uuid
 import json
 import psycopg2
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_community.vectorstores.pinecone import Pinecone
@@ -120,7 +120,7 @@ class VectorStoreService:
             print(f"Error initializing Pinecone: {e}")
             raise
     
-    def get_vector_stores(self) -> List[VectorStore]:
+    def get_vector_stores(self) -> list[VectorStore]:
         """Get information about all available vector stores"""
         return [VectorStore(**store["info"]) for store in self.vector_stores.values()]
     
@@ -152,12 +152,14 @@ class VectorStoreService:
                        WHERE table_name = '{PGVECTOR_TABLE_NAME}'
                     );
                 """)
-                table_exists = cursor.fetchone()[0]
+                result = cursor.fetchone()
+                table_exists = result[0] if result else False
                 
                 if table_exists:
                     # Get document count
                     cursor.execute(f"SELECT COUNT(*) FROM {PGVECTOR_TABLE_NAME}")
-                    doc_count = cursor.fetchone()[0]
+                    result = cursor.fetchone()
+                    doc_count = result[0] if result else 0
                     
                     # Get vector dimensions
                     cursor.execute(f"""
@@ -223,7 +225,7 @@ class VectorStoreService:
         
         return results
     
-    def get_collections(self) -> List[Collection]:
+    def get_collections(self) -> list[Collection]:
         """Get available collections from the database"""
         collections = []
         
@@ -242,7 +244,8 @@ class VectorStoreService:
                    WHERE table_name = 'collections'
                 );
             """)
-            table_exists = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            table_exists = result[0] if result else False
             
             if not table_exists:
                 print("Collections table does not exist")
@@ -326,8 +329,8 @@ class VectorStoreService:
                 connection_params = {
                     "user": "postgres",
                     "password": "postgres",
-                    "host": "pgvector-db",  # Use container hostname directly
-                    "port": "5432",
+                    "host": "pgvector-db",
+                    "port": 5432,
                     "database": "vectordb"
                 }
                 conn = psycopg2.connect(**connection_params)
@@ -340,10 +343,10 @@ class VectorStoreService:
         self,
         query: str,
         k: int = 5,
-        backend_ids: Optional[List[str]] = None,
-        collection_ids: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None
-    ) -> List[DocumentResponse]:
+        backend_ids: Optional[list[str]] = None,
+        collection_ids: Optional[list[str]] = None,
+        tags: Optional[list[str]] = None
+    ) -> list[DocumentResponse]:
         """
         Search across vector stores with optional filters
         """
@@ -444,9 +447,9 @@ class VectorStoreService:
         self,
         query: str,
         k: int = 5,
-        collection_ids: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None
-    ) -> List[DocumentResponse]:
+        collection_ids: Optional[list[str]] = None,
+        tags: Optional[list[str]] = None
+    ) -> list[DocumentResponse]:
         """Direct SQL search using pgvector for better performance and reliability"""
         results = []
         
@@ -580,7 +583,7 @@ class VectorStoreService:
         
         return results
     
-    async def _search_store(self, store, query: str, k: int, filter_dict: Dict[str, Any] = None):
+    async def _search_store(self, store, query: str, k: int, filter_dict: Optional[Dict[str, Any]] = None):
         """Helper method to search a vector store with proper filtering"""
         try:
             docs = store.similarity_search(
@@ -594,4 +597,4 @@ class VectorStoreService:
             return []
 
 # Create a singleton instance
-vector_store_service = VectorStoreService() 
+vector_store_service = VectorStoreService()    

@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 from pydantic import BaseModel
 
 
@@ -18,7 +18,7 @@ class Collection(BaseModel):
     id: str
     name: str
     description: Optional[str] = None
-    tags: List[str] = []
+    tags: list[str] = []
 
 
 class DocumentMetadata(BaseModel):
@@ -26,7 +26,7 @@ class DocumentMetadata(BaseModel):
     documentName: str
     chunkId: str
     chunkIndex: Optional[int] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     
 
 class DocumentResponse(BaseModel):
@@ -41,6 +41,6 @@ class DocumentResponse(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     k: int = 5
-    backend_ids: Optional[List[str]] = None
-    collection_ids: Optional[List[str]] = None
-    tags: Optional[List[str]] = None 
+    backend_ids: Optional[list[str]] = None
+    collection_ids: Optional[list[str]] = None
+    tags: Optional[list[str]] = None     
