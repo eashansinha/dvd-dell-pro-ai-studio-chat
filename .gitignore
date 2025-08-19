@@ -26,7 +26,7 @@ dev-dist
 
 # tests
 test-results
-playwrite-report
+playwright-report
 *.pdf
 
 # python
