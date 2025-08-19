@@ -21,7 +21,7 @@ class EmbeddingsService:
         print(f"EMBEDDINGS_MODEL: {EMBEDDINGS_MODEL}")
         print(f"OPENAI_API_BASE: {OPENAI_API_BASE}")
     
-    def embed_query(self, text: str) -> list:
+    def embed_query(self, text: str) -> list[float]:
         """Create embeddings for a query text"""
         try:
             print(f"Creating embedding for text: {text[:50]}...")
@@ -38,7 +38,7 @@ class EmbeddingsService:
             print(f"Error creating embedding: {e}")
             raise
 
-    def embed_documents(self, texts: list) -> list:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Create embeddings for multiple documents"""
         try:
             # add search_query: to the beginning of the every element in the list using lambda
@@ -63,4 +63,4 @@ embeddings_service = EmbeddingsService()
 # Function to create embeddings for backward compatibility
 def create_embeddings():
     """Return the embeddings service instance for backward compatibility"""
-    return embeddings_service 
+    return embeddings_service  

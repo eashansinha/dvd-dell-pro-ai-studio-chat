@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 import math
 from fastapi import APIRouter, Query
 from app.models.schema import VectorStore, Collection, DocumentResponse, SearchRequest
@@ -6,7 +6,7 @@ from app.services.vector_stores import vector_store_service
 
 router = APIRouter()
 
-@router.get("/vector-stores", response_model=List[VectorStore])
+@router.get("/vector-stores", response_model=list[VectorStore])
 async def list_vector_stores():
     """
     List all available vector stores
@@ -21,7 +21,7 @@ async def vector_stores_status():
     """
     return vector_store_service.check_connections()
 
-@router.get("/collections", response_model=List[Collection])
+@router.get("/collections", response_model=list[Collection])
 async def list_collections():
     """
     List all available document collections from the database
@@ -30,13 +30,13 @@ async def list_collections():
     print(f"Retrieved {len(collections)} collections from database")
     return collections
 
-@router.get("/search", response_model=List[DocumentResponse])
+@router.get("/search", response_model=list[DocumentResponse])
 async def search_documents(
     query: str,
     k: int = 5,
-    backend_id: List[str] = Query(None, description="Filter by vector store backend ID"),
-    collection_id: List[str] = Query(None, description="Filter by collection ID"),
-    tag: List[str] = Query(None, description="Filter by document tags")
+    backend_id: list[str] = Query(None, description="Filter by vector store backend ID"),
+    collection_id: list[str] = Query(None, description="Filter by collection ID"),
+    tag: list[str] = Query(None, description="Filter by document tags")
 ):
     """
     Search for documents across vector stores
@@ -64,4 +64,4 @@ async def search_documents(
             result.similarity = 0.0
     
     print(f"Search returned {len(results)} results")
-    return results 
+    return results  
