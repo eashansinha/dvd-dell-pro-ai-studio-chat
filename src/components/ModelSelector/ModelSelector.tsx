@@ -32,7 +32,7 @@ export const ModelSelector: React.FC = () => {
     
     useEffect(() => {
         // Load models from settings
-        const fetchModels = (event?: CustomEvent) => {
+        const fetchModels = (_event?: CustomEvent) => {
             const savedSettings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
             const enabledModels = savedSettings.enabledModels || {};
             const defaultModel = savedSettings.defaultModel || 'phi3:phi3-mini-4k';
@@ -143,6 +143,8 @@ export const ModelSelector: React.FC = () => {
                 return 'default';
             case 'dNPU':
                 return 'warning';
+            case 'local':
+                return 'secondary';
             default:
                 return 'default';
         }

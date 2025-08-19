@@ -27,7 +27,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   documentOverlap: 200,
   maxDocumentsRetrieved: 5,
   downloadsPath: '',
-  companyDocumentsEnabled: false
+  companyDocumentsEnabled: false,
+  aiProvider: 'dell-pro-ai-studio',
+  ollamaBaseUrl: 'http://localhost:11434'
 };
 
 /**
@@ -59,4 +61,4 @@ export function saveSettings(settings: AppSettings): void {
   } catch (error) {
     console.error('Failed to save settings to localStorage:', error);
   }
-} 
+}  

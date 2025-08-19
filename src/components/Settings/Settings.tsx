@@ -59,6 +59,7 @@ import DatabaseIcon from '@mui/icons-material/Storage';
 import { DocumentLibrary } from '../DocumentLibrary/DocumentLibrary';
 import { VectorDatabaseSettings } from './VectorDatabaseSettings';
 import { vectorDbService } from '../../services/VectorDbService';
+import APISettings from './APISettings';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { ModelService } from '../../services/ModelService';
 
@@ -131,6 +132,8 @@ export interface AppSettings {
   modelCapabilities?: Record<string, string>;
   downloadsPath?: string;
   companyDocumentsEnabled?: boolean;
+  aiProvider?: 'dell-pro-ai-studio' | 'ollama';
+  ollamaBaseUrl?: string;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -252,13 +255,13 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const fetchModels = async (silent = false) => {
-    if (!settings.apiBaseUrl || !settings.apiKey) return;
+    const provider = settings.aiProvider || 'dell-pro-ai-studio';
     
     if (!silent) setIsTesting(true);
     if (!silent) setTestResult(null);
     
     try {
-      const result = await ModelService.fetchModels(settings.apiBaseUrl, settings.apiKey, silent);
+      const result = await ModelService.fetchModels(provider, silent);
       
       if (result.success && result.models) {
         // Store models in local state
@@ -457,313 +460,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </Box>
 
         {activeTab === 'api' && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* API Configuration Section */}
-            <Typography variant="h6" gutterBottom>
-              API Configuration
-            </Typography>
-            
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Configure your API settings here. The system uses two separate API endpoints: one for AI generation (LLM API) and one for document retrieval (Backend API).
-            </Alert>
-            
-            {/* LLM API Section */}
-            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
-              LLM API Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              These settings control where chat messages and completions are sent for AI text generation.
-            </Typography>
-            
-            <TextField
-              label="LLM API Base URL"
-              value={settings.apiBaseUrl}
-              onChange={(e) => handleChange('apiBaseUrl', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="The URL for LLM text generation (e.g., http://localhost:8553/v1/openai for Dell Pro AI Studio)"
-            />
-            
-            <TextField
-              label="API Key"
-              value={settings.apiKey}
-              onChange={(e) => handleChange('apiKey', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              type="password"
-              helperText="API key for authentication (use 'dpais' for Dell Pro AI Studio)"
-            />
-            
-            {/* Backend API Section */}
-            <Divider sx={{ my: 2 }} />
-            
-            <Typography variant="subtitle1" gutterBottom>
-              Backend API Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              These settings control document retrieval, embeddings, and other vector database operations.
-            </Typography>
-            
-            <TextField
-              label="Backend API URL"
-              value={settings.backendApiUrl || 'http://localhost:8000'}
-              onChange={(e) => handleChange('backendApiUrl', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="URL for the document retrieval backend API (e.g., http://localhost:8000)"
-            />
-            
-            <TextField
-              label="Embeddings Model"
-              value={settings.embeddingsModel || 'nomic-embed-text'}
-              onChange={(e) => handleChange('embeddingsModel', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="Model to use for embeddings (e.g., nomic-embed-text, nomic-embed-text-v1.5)"
-            />
-            
-            {/* Company Documents Toggle */}
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.companyDocumentsEnabled || false}
-                    onChange={(e) => handleChange('companyDocumentsEnabled', e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Enable Company Documents"
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 7 }}>
-                Show the Company Documents tab for accessing backend vector databases
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Button 
-                variant="outlined" 
-                onClick={handleTestConnection}
-                disabled={isTesting || !settings.apiBaseUrl}
-                startIcon={isTesting ? <CircularProgress size={20} /> : null}
-              >
-                {isTesting ? 'Testing...' : 'Test Connection'}
-              </Button>
-              
-              {testResult && (
-                <Typography 
-                  variant="body2" 
-                  color={testResult.success ? 'success.main' : 'error.main'}
-                >
-                  {testResult.message}
-                </Typography>
-              )}
-            </Box>
-            
-            {/* Available Models Section */}
-            {(availableModels.length > 0 || settings.availableModels?.length > 0) && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Available Models
-                  {isTesting && <CircularProgress size={16} sx={{ ml: 1 }} />}
-                </Typography>
-                
-                <Paper variant="outlined" sx={{ maxHeight: '300px', overflow: 'auto', p: 1 }}>
-                  <List dense sx={{ width: '100%' }}>
-                    {(availableModels.length > 0 ? availableModels : (settings.availableModels || [])).map((modelId) => {
-                      // Get display name without compute type prefix and without parameter size
-                      let displayName = modelId;
-                      const prefixes = ['public-cloud/', 'private-cloud/', 'GPU/', 'NPU/', 'CPU/', 'dNPU'];
-                      
-                      for (const prefix of prefixes) {
-                        if (displayName.startsWith(prefix)) {
-                          displayName = displayName.substring(prefix.length);
-                          break;
-                        }
-                      }
-                      
-                      // Extract the model name and parameter size
-                      const parts = displayName.split(':');
-                      let modelName, paramSize;
-                      
-                      if (parts.length >= 2) {
-                        modelName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-                        paramSize = parts[1];
-                      } else {
-                        modelName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-                        paramSize = null;
-                      }
-                      
-                      // Get the current enabled state (default to true if not specified)
-                      const enabled = settings.enabledModels?.[modelId] !== false;
-                      
-                      // Check if this is the default model
-                      const isDefault = settings.defaultModel === modelId;
-                      
-                      // Get compute location tag if available
-                      const tag = settings.modelTags?.[modelId];
-                      
-                      // Get model capability (if available)
-                      const capability = settings.modelCapabilities?.[modelId];
-                      
-                      // Check if model can be toggled (only TextToText or TextToTextWithTools models)
-                      const canBeToggled = capability === 'TextToText' || capability === 'TextToTextWithTools';
-
-                      // Helper function to get tag color based on compute location
-                      const getTagColor = (tagValue: string): string => {
-                        switch(tagValue) {
-                          case 'public-cloud': return 'info';
-                          case 'private-cloud': return 'success';
-                          case 'GPU': return 'error';
-                          case 'NPU': return 'warning';
-                          case 'CPU': return 'default';
-                          default: return 'default';
-                        }
-                      };
-                      
-                      return (
-                        <ListItem
-                          key={modelId}
-                          sx={{
-                            py: 0.5,
-                            display: 'grid',
-                            gridTemplateColumns: '56px minmax(140px, 0.8fr) minmax(180px, 1.2fr) 100px',
-                            alignItems: 'center',
-                            gap: 0,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            '&:last-child': {
-                              borderBottom: 'none'
-                            }
-                          }}
-                          disableGutters
-                        >
-                          {/* Column 1: Toggle Switch */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', pl: 1 }}>
-                            <Switch 
-                              size="small"
-                              checked={enabled}
-                              disabled={!canBeToggled}
-                              onChange={(e) => {
-                                const newEnabledModels = {
-                                  ...(settings.enabledModels || {}),
-                                  [modelId]: e.target.checked
-                                };
-                                handleChange('enabledModels', newEnabledModels);
-                                
-                                // If disabling the default model, clear the default
-                                if (!e.target.checked && isDefault) {
-                                  handleChange('defaultModel', '');
-                                }
-                              }}
-                            />
-                          </Box>
-                          
-                          {/* Column 2: Model Name */}
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              fontWeight: enabled ? 'medium' : 'normal',
-                              opacity: canBeToggled ? 1 : 0.7,
-                              pl: 1,
-                              pr: 2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {modelName}
-                          </Typography>
-                          
-                          {/* Column 3: Tags/Chips */}
-                          <Box sx={{ 
-                            display: 'flex', 
-                            gap: 0.75, 
-                            flexWrap: 'wrap',
-                            justifyContent: 'flex-start',
-                            alignItems: 'center',
-                            pl: 0
-                          }}>
-                            {tag && (
-                              <Chip 
-                                size="small"
-                                label={tag}
-                                color={getTagColor(tag) as any}
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem' }}
-                              />
-                            )}
-                            {paramSize && (
-                              <Chip 
-                                size="small"
-                                label={paramSize}
-                                color="primary"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem' }}
-                              />
-                            )}
-                            {capability && capability !== 'TextToText' && capability !== 'TextToTextWithTools' && (
-                              <Chip 
-                                size="small"
-                                label={capability}
-                                color="default"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem', opacity: 0.7 }}
-                              />
-                            )}
-                          </Box>
-                          
-                          {/* Column 4: Default Switch */}
-                          <Box sx={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: canBeToggled ? 'flex-start' : 'center',
-                            pr: 1
-                          }}>
-                            {canBeToggled && (
-                              <FormControlLabel
-                                control={
-                                  <Switch
-                                    size="small"
-                                    checked={isDefault}
-                                    disabled={!enabled}
-                                    color="secondary"
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        // Set this as the default model
-                                        handleChange('defaultModel', modelId);
-                                      } else if (isDefault) {
-                                        // If unchecking the current default, clear it
-                                        handleChange('defaultModel', '');
-                                      }
-                                    }}
-                                  />
-                                }
-                                label={
-                                  <Typography 
-                                    variant="caption" 
-                                    color="secondary"
-                                    sx={{ opacity: enabled ? 1 : 0.5 }}
-                                  >
-                                    Default
-                                  </Typography>
-                                }
-                                sx={{ m: 0 }}
-                              />
-                            )}
-                          </Box>
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                </Paper>
-              </>
-            )}
-          </Box>
+          <APISettings />
         )}
 
         {activeTab === 'appearance' && (

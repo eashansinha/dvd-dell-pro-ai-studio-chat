@@ -23,7 +23,12 @@ import {
   Switch,
   Tooltip,
   Alert,
-  Divider
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -40,6 +45,8 @@ const APISettings: React.FC = () => {
   const [embeddingsModel, setEmbeddingsModel] = useState<string>(settings.embeddingsModel || 'nomic-embed-text');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [streamingEnabled, setStreamingEnabled] = useState<boolean>(settings.streamingEnabled !== false);
+  const [aiProvider, setAiProvider] = useState<string>(settings.aiProvider || 'dell-pro-ai-studio');
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState<string>(settings.ollamaBaseUrl || 'http://localhost:11434');
   
   useEffect(() => {
     // Save settings when component unmounts
@@ -55,7 +62,9 @@ const APISettings: React.FC = () => {
       backendApiUrl,
       modelId,
       embeddingsModel,
-      streamingEnabled
+      streamingEnabled,
+      aiProvider,
+      ollamaBaseUrl
     });
   };
   
@@ -86,6 +95,14 @@ const APISettings: React.FC = () => {
   const handleStreamingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStreamingEnabled(e.target.checked);
   };
+
+  const handleProviderChange = (e: SelectChangeEvent<string>) => {
+    setAiProvider(e.target.value);
+  };
+
+  const handleOllamaBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOllamaBaseUrl(e.target.value);
+  };
   
   return (
     <Box sx={{ p: 2 }}>
@@ -94,53 +111,92 @@ const APISettings: React.FC = () => {
       </Typography>
       
       <Alert severity="info" sx={{ mb: 2 }}>
-        Configure your API settings here. The system uses two separate API endpoints: one for AI generation (LLM API) and one for document retrieval (Backend API).
+        Configure your AI provider and API settings here. The system supports Dell Pro AI Studio and Ollama for local model access.
       </Alert>
       
-      <Typography variant="subtitle1" gutterBottom sx={{ mt: 3 }}>
-        LLM API Settings
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        These settings control where chat messages and completions are sent for AI text generation.
-      </Typography>
-      
       <Box sx={{ mb: 2 }}>
-        <TextField
-          fullWidth
-          label="LLM API Base URL"
-          value={apiBaseUrl}
-          onChange={handleApiBaseUrlChange}
-          margin="normal"
-          placeholder="Example: http://localhost:8553/v1/openai"
-          helperText="The base URL for LLM text generation (Dell Pro AI Studio, etc.)"
-        />
+        <FormControl fullWidth margin="normal">
+          <InputLabel>AI Provider</InputLabel>
+          <Select
+            value={aiProvider}
+            onChange={handleProviderChange}
+            label="AI Provider"
+          >
+            <MenuItem value="dell-pro-ai-studio">Dell Pro AI Studio</MenuItem>
+            <MenuItem value="ollama">Ollama (Local)</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
       
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          fullWidth
-          label="API Key"
-          value={apiKey}
-          onChange={handleApiKeyChange}
-          margin="normal"
-          type={showApiKey ? 'text' : 'password'}
-          placeholder="Enter API key (default: empty for Dell Pro AI Studio)"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle api key visibility"
-                  onClick={handleToggleApiKeyVisibility}
-                  edge="end"
-                >
-                  {showApiKey ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          helperText="API key for authentication (leave empty for local Dell Pro AI Studio)"
-        />
-      </Box>
+      {aiProvider === 'ollama' ? (
+        <>
+          <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
+            Ollama Configuration
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Configure connection to your local Ollama instance.
+          </Typography>
+          
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              label="Ollama Base URL"
+              value={ollamaBaseUrl}
+              onChange={handleOllamaBaseUrlChange}
+              margin="normal"
+              placeholder="http://localhost:11434"
+              helperText="The base URL for your Ollama instance"
+            />
+          </Box>
+        </>
+      ) : (
+        <>
+          <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
+            Dell Pro AI Studio Configuration
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Configure connection to Dell Pro AI Studio for enterprise AI models.
+          </Typography>
+          
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              label="LLM API Base URL"
+              value={apiBaseUrl}
+              onChange={handleApiBaseUrlChange}
+              margin="normal"
+              placeholder="http://localhost:8553/v1/openai"
+              helperText="The base URL for Dell Pro AI Studio LLM API"
+            />
+          </Box>
+          
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              label="API Key"
+              value={apiKey}
+              onChange={handleApiKeyChange}
+              margin="normal"
+              type={showApiKey ? 'text' : 'password'}
+              placeholder="dpais"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle api key visibility"
+                      onClick={handleToggleApiKeyVisibility}
+                      edge="end"
+                    >
+                      {showApiKey ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              helperText="API key for Dell Pro AI Studio authentication"
+            />
+          </Box>
+        </>
+      )}
       
       <Box sx={{ mb: 2 }}>
         <TextField
@@ -216,4 +272,4 @@ const APISettings: React.FC = () => {
   );
 };
 
-export default APISettings; 
+export default APISettings;    
