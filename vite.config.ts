@@ -1,5 +1,5 @@
 import { VitePWA } from 'vite-plugin-pwa';
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path';
 
@@ -180,12 +180,39 @@ export default defineConfig({
     }
   },
   
-  // Define global variables for browser environment
+  // Define global variables for browser environment (only for build, not tests)
   define: {
     // Polyfill for process.env needed by pg library
     'process.env': {},
-    'process.version': '"v16.0.0"',
-    'process.platform': '"browser"',
     global: 'window'
+  },
+
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/__tests__/setup.ts'],
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov', 'json'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'src/vite-env.d.ts',
+        'src/main.tsx',
+        'src/PWABadge.tsx'
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        }
+      }
+    }
   }
-})
+});
