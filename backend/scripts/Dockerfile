@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -28,4 +28,4 @@ ENV PGVECTOR_CONNECTION_STRING="postgresql://postgres:postgres@pgvector:5432/vec
     STARTUP_DELAY="5"
 
 # Run the script
-CMD ["python", "load_mission_collections.py"] 
+CMD ["python", "load_mission_collections.py"]  

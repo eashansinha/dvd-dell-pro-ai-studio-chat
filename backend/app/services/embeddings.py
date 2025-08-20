@@ -1,9 +1,9 @@
 import openai
-from app.config import OPENAI_API_KEY, OPENAI_API_BASE, EMBEDDINGS_MODEL
 import logging
+from app.config import OPENAI_API_KEY, OPENAI_API_BASE, EMBEDDINGS_MODEL
+from app.exceptions import EmbeddingError
 
-# logging.basicConfig(level=logging.DEBUG)  # or logging.INFO
-# logging.getLogger("langchain").setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Set up OpenAI client
 client = openai.OpenAI(
@@ -16,15 +16,15 @@ class EmbeddingsService:
     
     def __init__(self):
         """Initialize the embeddings service"""
-        print("=====Starting embeddings service=====")
-        print(f"OPENAI_API_KEY: {OPENAI_API_KEY}")
-        print(f"EMBEDDINGS_MODEL: {EMBEDDINGS_MODEL}")
-        print(f"OPENAI_API_BASE: {OPENAI_API_BASE}")
+        logger.info("Starting embeddings service")
+        logger.info(f"OPENAI_API_KEY: {OPENAI_API_KEY}")
+        logger.info(f"EMBEDDINGS_MODEL: {EMBEDDINGS_MODEL}")
+        logger.info(f"OPENAI_API_BASE: {OPENAI_API_BASE}")
     
-    def embed_query(self, text: str) -> list:
+    def embed_query(self, text: str) -> list[float]:
         """Create embeddings for a query text"""
         try:
-            print(f"Creating embedding for text: {text[:50]}...")
+            logger.debug(f"Creating embedding for text: {text[:50]}...")
             response = client.embeddings.create(
                 model=EMBEDDINGS_MODEL,
                 input="search_query: " + text,
@@ -32,18 +32,18 @@ class EmbeddingsService:
             )
             # Extract the embedding vector from the response
             embedding = response.data[0].embedding
-            print(f"Successfully created embedding with dimension: {len(embedding)}")
+            logger.debug(f"Successfully created embedding with dimension: {len(embedding)}")
             return embedding
         except Exception as e:
-            print(f"Error creating embedding: {e}")
-            raise
+            logger.error(f"Error creating embedding: {e}")
+            raise EmbeddingError(f"Failed to create embedding for query: {str(e)}", {"text": text[:100]})
 
-    def embed_documents(self, texts: list) -> list:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Create embeddings for multiple documents"""
         try:
             # add search_query: to the beginning of the every element in the list using lambda
             texts_nomic = list(map(lambda x: "search_query: " + x, texts))
-            print(f"Creating embeddings for {len(texts)} documents")
+            logger.info(f"Creating embeddings for {len(texts)} documents")
             response = client.embeddings.create(
                 model=EMBEDDINGS_MODEL,
                 input=texts_nomic,
@@ -51,11 +51,11 @@ class EmbeddingsService:
             )
             # Extract the embedding vectors from the response
             embeddings = [item.embedding for item in response.data]
-            print(f"Successfully created {len(embeddings)} embeddings")
+            logger.info(f"Successfully created {len(embeddings)} embeddings")
             return embeddings
         except Exception as e:
-            print(f"Error creating document embeddings: {e}")
-            raise
+            logger.error(f"Error creating document embeddings: {e}")
+            raise EmbeddingError(f"Failed to create embeddings for documents: {str(e)}", {"document_count": len(texts)})
 
 # Create a singleton instance for compatibility with existing code
 embeddings_service = EmbeddingsService()
@@ -63,4 +63,4 @@ embeddings_service = EmbeddingsService()
 # Function to create embeddings for backward compatibility
 def create_embeddings():
     """Return the embeddings service instance for backward compatibility"""
-    return embeddings_service 
+    return embeddings_service  

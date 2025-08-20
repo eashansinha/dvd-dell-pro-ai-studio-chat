@@ -1,7 +1,8 @@
 import uuid
 import json
 import psycopg2
-from typing import List, Dict, Any, Optional
+import logging
+from typing import Any
 
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_community.vectorstores.pinecone import Pinecone
@@ -21,6 +22,9 @@ from app.config import (
 )
 from app.models.schema import VectorStore, Collection, DocumentResponse, DocumentMetadata
 from app.services.embeddings import embeddings_service
+from app.exceptions import DatabaseConnectionError, SearchError
+
+logger = logging.getLogger(__name__)
 
 
 class VectorStoreService:
@@ -28,7 +32,7 @@ class VectorStoreService:
     
     def __init__(self):
         self.embeddings = embeddings_service
-        self.vector_stores: Dict[str, Any] = {}
+        self.vector_stores: dict[str, Any] = {}
         self.initialize_vector_stores()
         
     def initialize_vector_stores(self) -> None:
@@ -37,13 +41,13 @@ class VectorStoreService:
             try:
                 self._init_pgvector()
             except Exception as e:
-                print(f"Failed to initialize PGVector: {e}")
+                logger.error(f"Failed to initialize PGVector: {e}")
                 
         if ENABLE_PINECONE and PINECONE_API_KEY:
             try:
                 self._init_pinecone()
             except Exception as e:
-                print(f"Failed to initialize Pinecone: {e}")
+                logger.error(f"Failed to initialize Pinecone: {e}")
     
     def _init_pgvector(self) -> None:
         """Initialize PGVector store"""
@@ -58,7 +62,7 @@ class VectorStoreService:
                     collection_name=PGVECTOR_TABLE_NAME
                 )
             except (TypeError, ValueError) as e:
-                print(f"Basic initialization failed: {e}, trying alternative method")
+                logger.warning(f"Basic initialization failed: {e}, trying alternative method")
                 
                 # Alternative method for older versions
                 import sqlalchemy
@@ -80,10 +84,10 @@ class VectorStoreService:
                     "description": "Local PostgreSQL with pgvector extension"
                 }
             }
-            print("PGVector initialized successfully")
+            logger.info("PGVector initialized successfully")
         except Exception as e:
-            print(f"Error initializing PGVector: {e}")
-            raise
+            logger.error(f"Error initializing PGVector: {e}")
+            raise DatabaseConnectionError(f"Failed to initialize PGVector: {str(e)}")
     
     def _init_pinecone(self) -> None:
         """Initialize Pinecone store"""
@@ -115,16 +119,16 @@ class VectorStoreService:
                     "description": "Cloud-based Pinecone vector database"
                 }
             }
-            print("Pinecone initialized successfully")
+            logger.info("Pinecone initialized successfully")
         except Exception as e:
-            print(f"Error initializing Pinecone: {e}")
-            raise
+            logger.error(f"Error initializing Pinecone: {e}")
+            raise DatabaseConnectionError(f"Failed to initialize Pinecone: {str(e)}")
     
-    def get_vector_stores(self) -> List[VectorStore]:
+    def get_vector_stores(self) -> list[VectorStore]:
         """Get information about all available vector stores"""
         return [VectorStore(**store["info"]) for store in self.vector_stores.values()]
     
-    def check_connections(self) -> Dict[str, Any]:
+    def check_connections(self) -> dict[str, Any]:
         """Check connectivity to all configured vector stores"""
         results = {
             "status": "ok",
@@ -223,7 +227,7 @@ class VectorStoreService:
         
         return results
     
-    def get_collections(self) -> List[Collection]:
+    def get_collections(self) -> list[Collection]:
         """Get available collections from the database"""
         collections = []
         
@@ -245,14 +249,14 @@ class VectorStoreService:
             table_exists = cursor.fetchone()[0]
             
             if not table_exists:
-                print("Collections table does not exist")
+                logger.warning("Collections table does not exist")
                 return collections
                 
             # Query all collections
             cursor.execute("SELECT id, name, description, tags FROM collections")
             rows = cursor.fetchall()
             
-            print(f"Found {len(rows)} collections in database")
+            logger.info(f"Found {len(rows)} collections in database")
             
             for row in rows:
                 collection_id, name, description, tags_json = row
@@ -264,7 +268,7 @@ class VectorStoreService:
                         # If it's already a list or dict, use it directly
                         tags = tags_json
                 except Exception as e:
-                    print(f"Error parsing tags JSON: {e}, using empty list")
+                    logger.warning(f"Error parsing tags JSON: {e}, using empty list")
                     tags = []
                 
                 collection = Collection(
@@ -279,7 +283,7 @@ class VectorStoreService:
             conn.close()
             
         except Exception as e:
-            print(f"Error retrieving collections: {e}")
+            logger.error(f"Error retrieving collections: {e}")
             
         return collections
     
@@ -288,12 +292,12 @@ class VectorStoreService:
         try:
             # Try direct connection first
             try:
-                print("=====Starting direct connection=====")
-                print(f"PGVECTOR_CONNECTION_STRING: {PGVECTOR_CONNECTION_STRING}")
+                logger.debug("Starting direct connection")
+                logger.debug(f"PGVECTOR_CONNECTION_STRING: {PGVECTOR_CONNECTION_STRING}")
                 conn = psycopg2.connect(PGVECTOR_CONNECTION_STRING)
                 return conn
             except Exception as e:
-                print(f"Direct connection failed: {e}, trying to parse connection string")
+                logger.warning(f"Direct connection failed: {e}, trying to parse connection string")
             
             # Parse the connection string
             connection_params = {}
@@ -318,47 +322,55 @@ class VectorStoreService:
             
             # Connect to the database
             try:
-                conn = psycopg2.connect(**connection_params)
+                if "dsn" in connection_params:
+                    conn = psycopg2.connect(connection_params["dsn"])
+                else:
+                    conn = psycopg2.connect(
+                        user=connection_params["user"],
+                        password=connection_params["password"],
+                        host=connection_params["host"],
+                        port=connection_params["port"],
+                        database=connection_params["database"]
+                    )
                 return conn
             except Exception as e:
-                print(f"Direct connection failed: {e}, trying to parse connection string")
+                logger.warning(f"Parsed connection failed: {e}, trying fallback connection")
                 # Fallback to using container-specific host directly
-                connection_params = {
-                    "user": "postgres",
-                    "password": "postgres",
-                    "host": "pgvector-db",  # Use container hostname directly
-                    "port": "5432",
-                    "database": "vectordb"
-                }
-                conn = psycopg2.connect(**connection_params)
+                conn = psycopg2.connect(
+                    user="postgres",
+                    password="postgres",
+                    host="pgvector-db",
+                    port="5432",
+                    database="vectordb"
+                )
                 return conn
         except Exception as e:
-            print(f"Failed to connect to database: {e}")
-            raise
+            logger.error(f"Failed to connect to database: {e}")
+            raise DatabaseConnectionError(f"Unable to establish database connection: {str(e)}")
     
     async def search(
         self,
         query: str,
         k: int = 5,
-        backend_ids: Optional[List[str]] = None,
-        collection_ids: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None
-    ) -> List[DocumentResponse]:
+        backend_ids: list[str] | None = None,
+        collection_ids: list[str] | None = None,
+        tags: list[str] | None = None
+    ) -> list[DocumentResponse]:
         """
         Search across vector stores with optional filters
         """
         results = []
-        print("=====Starting search=====")
-        print(f"Query: {query}")
-        print(f"k: {k}")
-        print(f"backend_ids: {backend_ids}")
-        print(f"collection_ids: {collection_ids}")
-        print(f"tags: {tags}")
+        logger.info("Starting search")
+        logger.debug(f"Query: {query}")
+        logger.debug(f"k: {k}")
+        logger.debug(f"backend_ids: {backend_ids}")
+        logger.debug(f"collection_ids: {collection_ids}")
+        logger.debug(f"tags: {tags}")
 
         # Prioritize direct SQL search for pgvector for better performance
         if ENABLE_PGVECTOR and (not backend_ids or "pgvector-1" in backend_ids):
             try:
-                print("=====Starting direct SQL search=====")
+                logger.debug("Starting direct SQL search")
                 direct_results = await self._direct_pgvector_search(
                     query=query,
                     k=k,
@@ -368,7 +380,7 @@ class VectorStoreService:
                 if direct_results:
                     return direct_results
             except Exception as e:
-                print(f"Direct SQL search failed: {e}, falling back to LangChain search")
+                logger.warning(f"Direct SQL search failed: {e}, falling back to LangChain search")
         
         # Filter vector stores if backend_ids is provided
         stores_to_search = {}
@@ -380,7 +392,7 @@ class VectorStoreService:
             stores_to_search = self.vector_stores
             
         if not stores_to_search:
-            print("No vector stores available for search")
+            logger.warning("No vector stores available for search")
             return results
         
         # Perform search on each store
@@ -432,7 +444,7 @@ class VectorStoreService:
                     
                     results.append(doc_response)
             except Exception as e:
-                print(f"Error searching store {store_id}: {e}")
+                logger.error(f"Error searching store {store_id}: {e}")
         
         # Sort results by similarity score (highest first)
         results.sort(key=lambda x: x.similarity, reverse=True)
@@ -444,31 +456,30 @@ class VectorStoreService:
         self,
         query: str,
         k: int = 5,
-        collection_ids: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None
-    ) -> List[DocumentResponse]:
+        collection_ids: list[str] | None = None,
+        tags: list[str] | None = None
+    ) -> list[DocumentResponse]:
         """Direct SQL search using pgvector for better performance and reliability"""
         results = []
         
         try:
-            print("=====Starting direct pgvector SQL search=====")
-            print(f"Query: {query}")
+            logger.debug("Starting direct pgvector SQL search")
+            logger.debug(f"Query: {query}")
             # Generate embedding for the query
             try:
                 # Use our direct embeddings service instead of langchain
                 query_embedding = embeddings_service.embed_query(query)
-                print(f"Successfully generated embedding with dimensionality: {len(query_embedding)}")
+                logger.debug(f"Successfully generated embedding with dimensionality: {len(query_embedding)}")
             except Exception as e:
-                print(f"Error generating embedding: {e}")
-                print("Detailed error info:", str(e))
+                logger.error(f"Error generating embedding: {e}")
                 raise
             
-            print("=====Starting database connection=====")
+            logger.debug("Starting database connection")
             # Connect to the database
             conn = self._get_db_connection()
             cursor = conn.cursor()
             
-            print("=====Starting SQL query=====")
+            logger.debug("Starting SQL query")
             
             # The pgvector extension expects vector format with square brackets
             # Create a vector string correctly formatted for PostgreSQL
@@ -523,7 +534,7 @@ class VectorStoreService:
             # Add ORDER BY and LIMIT
             sql += f" ORDER BY similarity DESC LIMIT {k}"
             
-            print(f"SQL query: {sql}")
+            logger.debug(f"SQL query: {sql}")
             # No longer need to use sql_params
             
             # Execute the query without parameters
@@ -568,19 +579,19 @@ class VectorStoreService:
                     
                     results.append(doc_response)
                 except Exception as e:
-                    print(f"Error processing row: {e}")
-                    print(f"Row data: {row}")
+                    logger.error(f"Error processing row: {e}")
+                    logger.debug(f"Row data: {row}")
             
             cursor.close()
             conn.close()
             
         except Exception as e:
-            print(f"Error in direct pgvector search: {e}")
-            raise
+            logger.error(f"Error in direct pgvector search: {e}")
+            raise SearchError(f"Direct pgvector search failed: {str(e)}")
         
         return results
     
-    async def _search_store(self, store, query: str, k: int, filter_dict: Dict[str, Any] = None):
+    async def _search_store(self, store, query: str, k: int, filter_dict: dict[str, Any] | None = None):
         """Helper method to search a vector store with proper filtering"""
         try:
             docs = store.similarity_search(
@@ -590,8 +601,8 @@ class VectorStoreService:
             )
             return docs
         except Exception as e:
-            print(f"Error in similarity search: {e}")
+            logger.error(f"Error in similarity search: {e}")
             return []
 
 # Create a singleton instance
-vector_store_service = VectorStoreService() 
+vector_store_service = VectorStoreService()    

@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -18,4 +18,4 @@ ENV PYTHONPATH=/app
 EXPOSE 8000
 
 # Command to run the server
-CMD ["python", "run.py"] 
+CMD ["python", "run.py"]  
