@@ -13,16 +13,15 @@
  */
 
 import React from 'react';
-import { Box } from '@mui/material';
 import { Header } from '../Header/Header';
 import { ChatContent } from '../ChatContent/ChatContent';
 import './ChatContainer.css';
 
 export const ChatContainer: React.FC = () => {
   return (
-    <Box className="chat-container">
+    <div className="chat-container">
       <Header />
       <ChatContent />
-    </Box>
+    </div>
   );
 };

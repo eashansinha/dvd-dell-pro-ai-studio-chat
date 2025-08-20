@@ -14,7 +14,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { Select, MenuItem, FormControl, InputLabel, Box, Chip, Typography } from '@mui/material';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { Badge } from '../ui/badge';
 import { useAppSelector, useAppDispatch, setCurrentModel } from '../../store/store';
 
 interface Model {
@@ -32,7 +39,7 @@ export const ModelSelector: React.FC = () => {
     
     useEffect(() => {
         // Load models from settings
-        const fetchModels = (event?: CustomEvent) => {
+        const fetchModels = () => {
             const savedSettings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
             const enabledModels = savedSettings.enabledModels || {};
             const defaultModel = savedSettings.defaultModel || 'phi3:phi3-mini-4k';
@@ -80,8 +87,8 @@ export const ModelSelector: React.FC = () => {
         fetchModels();
         
         // Listen for settings changes
-        const handleSettingsUpdate = (event: Event) => {
-            fetchModels(event as CustomEvent);
+        const handleSettingsUpdate = () => {
+            fetchModels();
         };
         
         window.addEventListener('settings-updated', handleSettingsUpdate);
@@ -120,8 +127,7 @@ export const ModelSelector: React.FC = () => {
         return null;
     };
 
-    const handleModelChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-        const modelId = event.target.value as string;
+    const handleModelChange = (modelId: string) => {
         dispatch(setCurrentModel(modelId));
     };
 
@@ -132,138 +138,62 @@ export const ModelSelector: React.FC = () => {
     const getTagColor = (tag: string): string => {
         switch(tag) {
             case 'public-cloud':
-                return 'info';
+                return 'bg-blue-100 text-blue-800 border-blue-300';
             case 'private-cloud':
-                return 'success';
+                return 'bg-green-100 text-green-800 border-green-300';
             case 'GPU':
-                return 'error';
+                return 'bg-red-100 text-red-800 border-red-300';
             case 'NPU':
-                return 'warning';
+                return 'bg-yellow-100 text-yellow-800 border-yellow-300';
             case 'CPU':
-                return 'default';
+                return 'bg-gray-100 text-gray-800 border-gray-300';
             case 'dNPU':
-                return 'warning';
+                return 'bg-orange-100 text-orange-800 border-orange-300';
             default:
-                return 'default';
+                return 'bg-gray-100 text-gray-800 border-gray-300';
         }
     };
 
     return (
-        <FormControl 
-            variant="outlined" 
-            size="small"
-            sx={{
-                minWidth: 150,
-                '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'background.paper',
-                    fontSize: '0.875rem',
-                }
-            }}
-        >
-            <InputLabel id="model-select-label">Model</InputLabel>
-            <Select
-                labelId="model-select-label"
-                label="Model"
-                sx={{
-                    width: '18vw',
-                    maxWidth: '400px',
-                    height: '6vh'
-                }}
-                value={selectedModel}
-                onChange={handleModelChange as any}
-                MenuProps={{
-                    PaperProps: {
-                        sx: {
-                            '& .MuiMenuItem-root': {
-                                py: 0.75
-                            }
-                        }
-                    }
-                }}
-            >
-                {enabledModels.map(model => {
-                    const paramSize = getParameterSize(model.id);
-                    return (
-                        <MenuItem key={model.id} value={model.id}>
-                            <Box sx={{ 
-                                width: '100%', 
-                                display: 'flex', 
-                                alignItems: 'center',
-                                flexWrap: 'nowrap'
-                            }}>
-                                <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                        fontWeight: selectedModel === model.id ? 'bold' : 'medium',
-                                        flexShrink: 0,
-                                        marginRight: 1,
-                                        minWidth: '100px'
-                                    }}
-                                >
-                                    {model.name}
-                                </Typography>
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    gap: 0.5, 
-                                    flexWrap: 'wrap',
-                                    flex: 1,
-                                    justifyContent: 'flex-end'
-                                }}>
-                                    {model.isDefault && (
-                                        <Chip 
-                                            size="small" 
-                                            label="Default" 
-                                            color="secondary" 
-                                            variant="outlined" 
-                                            sx={{ 
-                                                height: 18, 
-                                                fontSize: '0.65rem',
-                                                '& .MuiChip-label': { 
-                                                    px: 0.8,
-                                                    py: 0
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                    {model.tag && (
-                                        <Chip 
-                                            size="small" 
-                                            label={model.tag} 
-                                            color={getTagColor(model.tag) as any}
-                                            variant="outlined" 
-                                            sx={{ 
-                                                height: 18, 
-                                                fontSize: '0.65rem',
-                                                '& .MuiChip-label': { 
-                                                    px: 0.8,
-                                                    py: 0
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                    {paramSize && (
-                                        <Chip 
-                                            size="small" 
-                                            label={paramSize} 
-                                            color="primary"
-                                            variant="outlined" 
-                                            sx={{ 
-                                                height: 18, 
-                                                fontSize: '0.65rem',
-                                                '& .MuiChip-label': { 
-                                                    px: 0.8,
-                                                    py: 0
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                </Box>
-                            </Box>
-                        </MenuItem>
-                    );
-                })}
+        <div className="min-w-[150px]">
+            <Select value={selectedModel || ''} onValueChange={handleModelChange}>
+                <SelectTrigger className="w-[18vw] max-w-[400px] h-[6vh] rounded-lg bg-background text-sm">
+                    <SelectValue placeholder="Select Model" />
+                </SelectTrigger>
+                <SelectContent>
+                    {enabledModels.map(model => {
+                        const paramSize = getParameterSize(model.id);
+                        return (
+                            <SelectItem key={model.id} value={model.id}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`flex-shrink-0 min-w-[100px] text-sm ${
+                                        selectedModel === model.id ? 'font-bold' : 'font-medium'
+                                    }`}>
+                                        {model.name}
+                                    </span>
+                                    <div className="flex gap-1 flex-wrap justify-end">
+                                        {model.isDefault && (
+                                            <Badge variant="outline" className="h-[18px] text-[0.65rem] px-2 py-0 bg-purple-100 text-purple-800 border-purple-300">
+                                                Default
+                                            </Badge>
+                                        )}
+                                        {model.tag && (
+                                            <Badge variant="outline" className={`h-[18px] text-[0.65rem] px-2 py-0 ${getTagColor(model.tag)}`}>
+                                                {model.tag}
+                                            </Badge>
+                                        )}
+                                        {paramSize && (
+                                            <Badge variant="outline" className="h-[18px] text-[0.65rem] px-2 py-0 bg-blue-100 text-blue-800 border-blue-300">
+                                                {paramSize}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+                            </SelectItem>
+                        );
+                    })}
+                </SelectContent>
             </Select>
-        </FormControl>
+        </div>
     );
 };

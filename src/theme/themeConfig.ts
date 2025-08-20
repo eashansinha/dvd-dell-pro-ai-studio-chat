@@ -12,10 +12,10 @@
  * limitations under the License.
  */
 
-import { ThemeOptions, PaletteMode } from '@mui/material';
+export type ThemeMode = 'light' | 'dark' | 'oled';
 
 export interface ThemeConfig {
-  mode: PaletteMode;
+  mode: ThemeMode;
   primary: string;
   secondary: string;
   background: string;
@@ -47,7 +47,7 @@ export const DEFAULT_THEMES = {
   } as ThemeConfig,
   
   oled: {
-    mode: 'dark',
+    mode: 'oled',
     primary: '#61C1EB',
     secondary: '#C47AF4',
     background: '#000000',
@@ -57,77 +57,25 @@ export const DEFAULT_THEMES = {
   } as ThemeConfig
 };
 
-// Convert ThemeConfig to MUI ThemeOptions
-export function createThemeOptions(config: ThemeConfig): ThemeOptions {
-  // Helper to convert hex to rgb
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result 
-      ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
-      : '0, 0, 0';
-  };
-
-  // Inject CSS variables into document root
+export function applyTheme(config: ThemeConfig) {
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
-    root.style.setProperty('--primary-color', config.primary);
-    root.style.setProperty('--secondary-color', config.secondary);
-    root.style.setProperty('--background-color', config.background);
-    root.style.setProperty('--paper-color', config.paper);
-    root.style.setProperty('--text-color', config.text);
-    root.style.setProperty('--accent-color', config.accent);
     
-    // Add RGB values for opacity support
-    root.style.setProperty('--primary-color-rgb', hexToRgb(config.primary));
-    root.style.setProperty('--secondary-color-rgb', hexToRgb(config.secondary));
-    root.style.setProperty('--background-color-rgb', hexToRgb(config.background));
-    root.style.setProperty('--paper-color-rgb', hexToRgb(config.paper));
-    root.style.setProperty('--text-color-rgb', hexToRgb(config.text));
-    root.style.setProperty('--accent-color-rgb', hexToRgb(config.accent));
+    root.classList.remove('light', 'dark', 'theme-oled');
     
-    // Add contrast variables
-    root.style.setProperty('--text-on-primary', '#ffffff');
-    root.style.setProperty('--border-color', config.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)');
-    root.style.setProperty('--hover-bg', config.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)');
-    root.style.setProperty('--active-bg', config.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)');
+    if (config.mode === 'oled') {
+      root.classList.add('theme-oled');
+    } else if (config.mode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.add('light');
+    }
+    
+    root.style.setProperty('--dell-primary-color', config.primary);
+    root.style.setProperty('--dell-secondary-color', config.secondary);
+    root.style.setProperty('--dell-background-color', config.background);
+    root.style.setProperty('--dell-paper-color', config.paper);
+    root.style.setProperty('--dell-text-color', config.text);
+    root.style.setProperty('--dell-accent-color', config.accent);
   }
-
-  return {
-    palette: {
-      mode: config.mode,
-      primary: {
-        main: config.primary,
-      },
-      secondary: {
-        main: config.secondary,
-      },
-      background: {
-        default: config.background,
-        paper: config.paper,
-      },
-      text: {
-        primary: config.text,
-      },
-    },
-    typography: {
-      fontFamily: '"Inter", "Segoe UI", "Roboto", "Oxygen", sans-serif',
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: 'none',
-            borderRadius: 8,
-          },
-        },
-      },
-      MuiChip: {
-        styleOverrides: {
-          root: {
-            fontWeight: 500,
-          },
-        },
-      },
-    },
-  };
 }

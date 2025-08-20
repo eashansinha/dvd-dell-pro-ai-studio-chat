@@ -13,7 +13,6 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { Box } from '@mui/material';
 import { useAppSelector } from '../../store/store';
 import { MessageBubble } from '../MessageBubble/MessageBubble';
 import './ChatMessages.css';
@@ -36,8 +35,8 @@ export const ChatMessages: React.FC = () => {
 //   console.log('showLiveThinking:', showLiveThinking, 'isThinking:', isThinking, 'tokens length:', thinkingTokens.length);
   
   return (
-    <Box className="chat-messages">
-      <Box className="messages-container">
+    <div className="chat-messages">
+      <div className="messages-container">
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1;
           return (
@@ -66,7 +65,7 @@ export const ChatMessages: React.FC = () => {
         )}
         
         <div ref={messagesEndRef} />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };

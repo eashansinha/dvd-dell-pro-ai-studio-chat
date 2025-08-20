@@ -13,12 +13,13 @@
  */
 
 import React from 'react';
-import { Snackbar, Alert, Chip } from '@mui/material';
-import { CloudOff, Cloud } from '@mui/icons-material';
+import { CloudOff, Cloud } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Alert, AlertDescription } from '../ui/alert';
 import { useOffline } from '../../context/OfflineContext';
 
 export const OfflineIndicator: React.FC = () => {
-  const { isOnline, isServiceWorkerReady } = useOffline();
+  const { isOnline } = useOffline();
   const [showAlert, setShowAlert] = React.useState(false);
   const [prevOnlineState, setPrevOnlineState] = React.useState(isOnline);
 
@@ -38,38 +39,36 @@ export const OfflineIndicator: React.FC = () => {
     <>
       {/* Persistent offline chip in the top right corner */}
       {!isOnline && (
-        <Chip
-          icon={<CloudOff />}
-          label="Offline Mode"
-          color="warning"
-          size="small"
-          sx={{
-            position: 'fixed',
-            top: 16,
-            right: 16,
-            zIndex: 9999,
-          }}
-        />
+        <Badge
+          variant="secondary"
+          className="fixed top-4 right-4 z-[9999] bg-yellow-100 text-yellow-800 border-yellow-300"
+        >
+          <CloudOff className="w-3 h-3 mr-1" />
+          Offline Mode
+        </Badge>
       )}
 
       {/* Alert when status changes */}
-      <Snackbar
-        open={showAlert}
-        autoHideDuration={4000}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleClose}
-          severity={isOnline ? 'success' : 'warning'}
-          icon={isOnline ? <Cloud /> : <CloudOff />}
-          sx={{ width: '100%' }}
-        >
-          {isOnline
-            ? 'Back online! All features are available.'
-            : 'You are offline. Company chat features requiring remote access are unavailable.'}
-        </Alert>
-      </Snackbar>
+      {showAlert && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9998] w-full max-w-md">
+          <Alert className={`${isOnline ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
+            <div className="flex items-center">
+              {isOnline ? <Cloud className="h-4 w-4 text-green-600" /> : <CloudOff className="h-4 w-4 text-yellow-600" />}
+              <AlertDescription className={`ml-2 ${isOnline ? 'text-green-800' : 'text-yellow-800'}`}>
+                {isOnline
+                  ? 'Back online! All features are available.'
+                  : 'You are offline. Company chat features requiring remote access are unavailable.'}
+              </AlertDescription>
+              <button
+                onClick={handleClose}
+                className="ml-auto text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+          </Alert>
+        </div>
+      )}
     </>
   );
-}; 
+};  

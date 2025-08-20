@@ -1,10 +1,13 @@
-/*
- * Copyright © 2025 Dell Inc. or its subsidiaries. All Rights Reserved.
-
+/**
+ * Dell Pro AI Studio Chat
+ * Copyright (c) 2024 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,53 +16,26 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  TextField, 
-  Typography,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Grid,
-  Paper,
-  Tabs,
-  Tab,
-  Switch,
-  FormControlLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tooltip,
-  IconButton,
-  Slider,
-  FormHelperText,
-  Alert,
-  Chip
-} from '@mui/material';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Switch } from '../ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Slider } from '../ui/slider';
 import { ThemeConfig, DEFAULT_THEMES } from '../../theme/themeConfig';
 import { DocumentUpload } from '../DocumentUpload/DocumentUpload';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import InfoIcon from '@mui/icons-material/Info';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ArticleIcon from '@mui/icons-material/Article';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import CloudIcon from '@mui/icons-material/Cloud';
-import DatabaseIcon from '@mui/icons-material/Storage';
+import { ChevronDown, Info, Settings, FileText, Bot, Cloud, Database, Volume2 } from 'lucide-react';
 import { DocumentLibrary } from '../DocumentLibrary/DocumentLibrary';
 import { VectorDatabaseSettings } from './VectorDatabaseSettings';
 import { vectorDbService } from '../../services/VectorDbService';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { ModelService } from '../../services/ModelService';
 
 // Custom color picker component
@@ -69,332 +45,185 @@ const ColorPickerInput: React.FC<{
   onChange: (color: string) => void;
 }> = ({ label, color, onChange }) => {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-      <Typography variant="body2" sx={{ minWidth: 100 }}>{label}</Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box 
-          sx={{ 
-            width: 36, 
-            height: 36, 
-            borderRadius: 1, 
-            bgcolor: color,
-            border: '1px solid',
-            borderColor: theme => theme.palette.divider
-          }} 
+    <div className="flex items-center gap-2 mb-1">
+      <span className="text-sm min-w-[100px]">{label}</span>
+      <div className="flex items-center gap-1">
+        <div 
+          className="w-9 h-9 rounded border border-border"
+          style={{ backgroundColor: color }}
         />
-        <TextField
+        <Input
           type="text"
-          size="small"
           value={color}
           onChange={(e) => onChange(e.target.value)}
-          sx={{ width: 120 }}
+          className="w-[120px]"
         />
         <input
           type="color"
           value={color}
           onChange={(e) => onChange(e.target.value)}
-          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+          className="w-10 h-10 p-0 border-none cursor-pointer"
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 
-// Interfaces
-interface SettingsProps {
+// Settings component props
+export interface AppSettingsProps {
   open: boolean;
   onClose: () => void;
-  onSave: (settings: AppSettings) => void;
-  currentSettings: AppSettings;
+  settings: any;
+  onSave: (settings: any) => void;
+  onTestConnection?: () => void;
 }
 
-export interface AppSettings {
-  apiBaseUrl: string;
-  backendApiUrl: string;
-  apiKey: string;
-  selectedTheme: string;
-  customTheme?: ThemeConfig;
-  availableModels: string[];
-  systemMessage: string;
-  documentChunkSize: number;
-  documentOverlap: number;
-  maxDocumentsRetrieved: number;
-  embeddingsModel?: string;
-  strictRagMode?: boolean;
-  showDocumentSources?: boolean;
-  enabledModels?: Record<string, boolean>;
-  defaultModel?: string;
-  ttsModel?: string;
-  ttsVoice?: string;
-  vectorDbConfigs?: any[];
-  modelTags?: Record<string, string>;
-  modelCapabilities?: Record<string, string>;
-  downloadsPath?: string;
-  companyDocumentsEnabled?: boolean;
-}
-
-export const Settings: React.FC<SettingsProps> = ({ 
-  open, 
-  onClose, 
+// Settings component
+export const Settings: React.FC<AppSettingsProps> = ({
+  open,
+  onClose,
+  settings,
   onSave,
-  currentSettings
+  onTestConnection
 }) => {
-  const [settings, setSettings] = useState<AppSettings>(currentSettings);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
+  // State for settings
+  const [localSettings, setLocalSettings] = useState({ ...settings });
   const [activeTab, setActiveTab] = useState('api');
-  const [systemMessage, setSystemMessage] = useState('');
-  const [documentChunkSize, setDocumentChunkSize] = useState(1000);
-  const [documentOverlap, setDocumentOverlap] = useState(200);
-  const [maxDocumentsRetrieved, setMaxDocumentsRetrieved] = useState(5);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [testStatus, setTestStatus] = useState<'success' | 'error' | null>(null);
   const [vectorDbCount, setVectorDbCount] = useState(0);
+  const [previewTheme, setPreviewTheme] = useState<ThemeConfig | null>(null);
 
-  // Effect to reset state when dialog opens
+  // Initialize settings
   useEffect(() => {
-    if (open) {
-      setSettings(currentSettings);
-      setTestResult(null);
-      
-      // Initialize custom theme if not present
-      if (currentSettings.selectedTheme === 'custom' && !currentSettings.customTheme) {
-        setSettings({
-          ...currentSettings,
-          customTheme: { ...DEFAULT_THEMES.dark } // Start with dark theme as base
-        });
-      }
-      
-      // Load vector database counts
-      const configs = vectorDbService.getConfigurations();
-      setVectorDbCount(configs.length);
-    }
-  }, [open, currentSettings]);
-
-  useEffect(() => {
-    const savedSettings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
+    setLocalSettings({ ...settings });
     
-    // Load existing settings
-    setSettings(prev => ({
+    // Update vector database count
+    const configs = vectorDbService.getConfigurations();
+    setVectorDbCount(configs.length);
+    
+    // Reset preview theme when dialog opens
+    setPreviewTheme(null);
+  }, [open, settings]);
+
+  // Handle settings change
+  const handleChange = (key: string, value: any) => {
+    setLocalSettings(prev => ({
       ...prev,
-      apiBaseUrl: savedSettings.apiBaseUrl || '',
-      apiKey: savedSettings.apiKey || '',
-      systemMessage: savedSettings.systemMessage || '',
-      documentChunkSize: savedSettings.documentChunkSize || 1000,
-      documentOverlap: savedSettings.documentOverlap || 200,
-      maxDocumentsRetrieved: savedSettings.maxDocumentsRetrieved || 5,
-      embeddingsModel: savedSettings.embeddingsModel || 'nomic-embed-text-v1.5',
-      enabledModels: savedSettings.enabledModels || {},
-      defaultModel: savedSettings.defaultModel || 'phi3:phi3-mini-4k',
-      availableModels: savedSettings.availableModels || [],
-      ttsModel: savedSettings.ttsModel || 'kokoro',
-      ttsVoice: savedSettings.ttsVoice || 'af_jessic',
-      strictRagMode: savedSettings.strictRagMode || false,
-      showDocumentSources: savedSettings.showDocumentSources !== false,
-      modelTags: savedSettings.modelTags || {},
-      modelCapabilities: savedSettings.modelCapabilities || {},
-      downloadsPath: savedSettings.downloadsPath || '',
-      companyDocumentsEnabled: savedSettings.companyDocumentsEnabled || false
+      [key]: value
     }));
-    
-    // Set system message
-    setSystemMessage(savedSettings.systemMessage || '');
-    
-    // Set document settings
-    setDocumentChunkSize(savedSettings.documentChunkSize || 1000);
-    setDocumentOverlap(savedSettings.documentOverlap || 200);
-    setMaxDocumentsRetrieved(savedSettings.maxDocumentsRetrieved || 5);
-    
-    // Also set available models from cached settings
-    if (savedSettings.availableModels) {
-      setAvailableModels(savedSettings.availableModels);
-    }
-    
-    // If we have API settings, try to fetch fresh models
-    if (savedSettings.apiBaseUrl && savedSettings.apiKey) {
-      // Use setTimeout to ensure this runs after the component is fully mounted
-      setTimeout(() => {
-        fetchModels(true);
-      }, 500);
-    }
-  }, []);
-
-  const handleChange = (field: keyof AppSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
-    
-    // If changing theme type to custom, initialize customTheme if not present
-    if (field === 'selectedTheme' && value === 'custom' && !settings.customTheme) {
-      setSettings(prev => ({ 
-        ...prev, 
-        [field]: value, 
-        customTheme: { ...DEFAULT_THEMES.dark } 
-      }));
-    }
-    
-    setTestResult(null); // Clear test results on change
   };
 
-  const handleCustomThemeChange = (property: keyof ThemeConfig, value: string) => {
-    setSettings(prev => ({
+  // Handle custom theme change
+  const handleCustomThemeChange = (key: string, value: any) => {
+    setLocalSettings(prev => ({
       ...prev,
       customTheme: {
-        ...(prev.customTheme || DEFAULT_THEMES.dark),
-        [property]: value
+        ...prev.customTheme,
+        [key]: value
       }
     }));
   };
 
-  const handlePreviewTheme = (preset: keyof typeof DEFAULT_THEMES) => {
-    setSettings(prev => ({
-      ...prev,
-      customTheme: { ...DEFAULT_THEMES[preset] }
-    }));
+  // Handle theme preview
+  const handlePreviewTheme = (theme: ThemeConfig) => {
+    setPreviewTheme(theme);
   };
 
+  // Fetch available models
   const fetchModels = async (silent = false) => {
-    if (!settings.apiBaseUrl || !settings.apiKey) return;
-    
-    if (!silent) setIsTesting(true);
-    if (!silent) setTestResult(null);
-    
+    if (!localSettings.apiBaseUrl || !localSettings.apiKey) {
+      return;
+    }
+
+    if (!silent) {
+      setIsLoading(true);
+      setTestStatus(null);
+    }
+
     try {
-      const result = await ModelService.fetchModels(settings.apiBaseUrl, settings.apiKey, silent);
+      const modelService = new ModelService(
+        localSettings.apiBaseUrl,
+        localSettings.apiKey
+      );
       
-      if (result.success && result.models) {
-        // Store models in local state
-        setAvailableModels(result.models);
-        
-        if (!silent) {
-          setTestResult({
-            success: true,
-            message: result.message
-          });
-        }
-        
-        // Update settings with fetched data
-        const updatedSettings = { 
-          ...settings,
-          availableModels: result.models,
-          modelTags: result.modelTags || {},
-          modelCapabilities: result.modelCapabilities || {},
-          enabledModels: result.updatedEnabledModels || {}
-        };
-        
-        setSettings(updatedSettings);
-        
-        // Save to localStorage immediately so ModelSelector can access it
-        const savedSettings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
-        localStorage.setItem('chatAppSettings', JSON.stringify({
-          ...savedSettings,
-          availableModels: updatedSettings.availableModels,
-          modelTags: result.modelTags || {},
-          modelCapabilities: result.modelCapabilities || {},
-          enabledModels: result.updatedEnabledModels || {}
-        }));
-        
-        // Dispatch event to notify components about settings change
-        window.dispatchEvent(new CustomEvent('settings-updated'));
-      } else {
-        if (!silent) {
-          setTestResult({
-            success: false,
-            message: result.message
-          });
-        }
+      const models = await modelService.getAvailableModels();
+      setAvailableModels(models);
+      
+      if (!silent) {
+        setTestStatus('success');
+      }
+      
+      // Update enabled models if needed
+      const updatedSettings = { ...localSettings };
+      if (!updatedSettings.enabledModels || updatedSettings.enabledModels.length === 0) {
+        updatedSettings.enabledModels = models.slice(0, 3); // Enable first 3 models by default
+        setLocalSettings(updatedSettings);
       }
     } catch (error) {
+      console.error('Error fetching models:', error);
       if (!silent) {
-        setTestResult({
-          success: false,
-          message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-        });
+        setTestStatus('error');
       }
     } finally {
-      if (!silent) setIsTesting(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   };
 
+  // Handle test connection
   const handleTestConnection = () => {
-    fetchModels(false);
+    fetchModels();
   };
 
+  // Handle save
   const handleSave = () => {
-    const updatedSettings = {
-      ...settings,
-      systemMessage,
-      documentChunkSize,
-      documentOverlap,
-      maxDocumentsRetrieved,
-      strictRagMode: settings.strictRagMode || false,
-      showDocumentSources: settings.showDocumentSources !== false,
-      modelTags: settings.modelTags || {},
-      modelCapabilities: settings.modelCapabilities || {},
-      companyDocumentsEnabled: settings.companyDocumentsEnabled || false
-    };
+    const updatedSettings = { ...localSettings };
     
-    localStorage.setItem('chatAppSettings', JSON.stringify(updatedSettings));
+    // Ensure we have at least one enabled model
+    if (!updatedSettings.enabledModels || updatedSettings.enabledModels.length === 0) {
+      if (availableModels.length > 0) {
+        updatedSettings.enabledModels = [availableModels[0]];
+      } else {
+        updatedSettings.enabledModels = ['gpt-3.5-turbo'];
+      }
+    }
     
-    // Dispatch a custom event to notify components about settings changes
-    window.dispatchEvent(new CustomEvent('settings-updated'));
-    
+    // Save settings
     onSave(updatedSettings);
     onClose();
   };
 
-  // Preview of the custom theme
-  const renderThemePreview = () => {
-    const theme = settings.customTheme || DEFAULT_THEMES.light;
-    
+  // Render theme preview
+  const renderThemePreview = (theme: ThemeConfig) => {
     return (
-      <Paper
-        sx={{
-          p: 2,
-          backgroundColor: theme.paper,
-          color: theme.text,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 2,
-          overflow: 'hidden'
-        }}
-      >
-        <Typography variant="h6" sx={{ color: theme.text, mb: 1 }}>
-          Theme Preview
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-          <Button
-            size="small"
-            sx={{ backgroundColor: theme.primary, color: '#fff' }}
-          >
-            Primary Button
-          </Button>
-          <Button
-            size="small"
-            sx={{ backgroundColor: theme.secondary, color: '#fff' }}
-          >
-            Secondary
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            sx={{ borderColor: theme.accent, color: theme.accent }}
-          >
-            Accent
-          </Button>
-        </Box>
-        <Box 
-          sx={{ 
-            backgroundColor: theme.background, 
-            p: 1, 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'rgba(0,0,0,0.1)',
-          }}
-        >
-          <Typography variant="body2" sx={{ color: theme.text }}>
-            Sample text on background
-          </Typography>
-        </Box>
-      </Paper>
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 bg-primary">
+          <CardTitle className="text-primary-foreground text-lg">Theme Preview</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge>Primary</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="destructive">Destructive</Badge>
+            <Badge variant="outline">Outline</Badge>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm">Primary</Button>
+            <Button size="sm" variant="secondary">Secondary</Button>
+            <Button size="sm" variant="destructive">Destructive</Button>
+            <Button size="sm" variant="outline">Outline</Button>
+            <Button size="sm" variant="ghost">Ghost</Button>
+          </div>
+          
+          <div className="rounded border border-border p-4 bg-background">
+            <p className="text-foreground">Sample text on background</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -407,642 +236,416 @@ export const Settings: React.FC<SettingsProps> = ({
 
   // Add effect to load models when dialog opens or tab changes
   useEffect(() => {
-    if (open && activeTab === 'api' && settings.apiBaseUrl && settings.apiKey) {
+    if (open && activeTab === 'api' && localSettings.apiBaseUrl && localSettings.apiKey) {
       fetchModels(true); // Silent fetch on load
     }
-  }, [open, activeTab, settings.apiBaseUrl, settings.apiKey]);
+  }, [open, activeTab, localSettings.apiBaseUrl, localSettings.apiKey]);
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
-      fullWidth
-      PaperProps={{
-        sx: {
-          height: '80vh', // Fixed height as 80% of viewport height
-          maxHeight: '80vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }
-      }}
-    >
-      <DialogTitle>Settings</DialogTitle>
-      <DialogContent 
-        dividers
-        sx={{ 
-          flex: 1,
-          overflow: 'auto', // Enable scrolling
-          padding: 2
-        }}
-      >
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label="API Configuration" value="api" />
-            <Tab label="Appearance" value="appearance" />
-            <Tab label="Assistant" value="assistant" />
-            <Tab label="Documents" value="documents" />
-            <Tab 
-              label="Vector Databases" 
-              value="vectorDb" 
-              icon={vectorDbCount > 0 ? <CloudIcon fontSize="small" /> : undefined}
-              iconPosition="end"
-            />
-          </Tabs>
-        </Box>
-
-        {activeTab === 'api' && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* API Configuration Section */}
-            <Typography variant="h6" gutterBottom>
-              API Configuration
-            </Typography>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl h-[80vh] max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-auto p-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="api">API Configuration</TabsTrigger>
+              <TabsTrigger value="appearance">Appearance</TabsTrigger>
+              <TabsTrigger value="assistant">Assistant</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="vectorDb" className="flex items-center gap-1">
+                Vector Databases
+                {vectorDbCount > 0 && <Cloud className="h-3 w-3" />}
+              </TabsTrigger>
+            </TabsList>
             
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Configure your API settings here. The system uses two separate API endpoints: one for AI generation (LLM API) and one for document retrieval (Backend API).
-            </Alert>
-            
-            {/* LLM API Section */}
-            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
-              LLM API Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              These settings control where chat messages and completions are sent for AI text generation.
-            </Typography>
-            
-            <TextField
-              label="LLM API Base URL"
-              value={settings.apiBaseUrl}
-              onChange={(e) => handleChange('apiBaseUrl', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="The URL for LLM text generation (e.g., http://localhost:8553/v1/openai for Dell Pro AI Studio)"
-            />
-            
-            <TextField
-              label="API Key"
-              value={settings.apiKey}
-              onChange={(e) => handleChange('apiKey', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              type="password"
-              helperText="API key for authentication (use 'dpais' for Dell Pro AI Studio)"
-            />
-            
-            {/* Backend API Section */}
-            <Divider sx={{ my: 2 }} />
-            
-            <Typography variant="subtitle1" gutterBottom>
-              Backend API Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              These settings control document retrieval, embeddings, and other vector database operations.
-            </Typography>
-            
-            <TextField
-              label="Backend API URL"
-              value={settings.backendApiUrl || 'http://localhost:8000'}
-              onChange={(e) => handleChange('backendApiUrl', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="URL for the document retrieval backend API (e.g., http://localhost:8000)"
-            />
-            
-            <TextField
-              label="Embeddings Model"
-              value={settings.embeddingsModel || 'nomic-embed-text'}
-              onChange={(e) => handleChange('embeddingsModel', e.target.value)}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              helperText="Model to use for embeddings (e.g., nomic-embed-text, nomic-embed-text-v1.5)"
-            />
-            
-            {/* Company Documents Toggle */}
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.companyDocumentsEnabled || false}
-                    onChange={(e) => handleChange('companyDocumentsEnabled', e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Enable Company Documents"
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 7 }}>
-                Show the Company Documents tab for accessing backend vector databases
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Button 
-                variant="outlined" 
-                onClick={handleTestConnection}
-                disabled={isTesting || !settings.apiBaseUrl}
-                startIcon={isTesting ? <CircularProgress size={20} /> : null}
-              >
-                {isTesting ? 'Testing...' : 'Test Connection'}
-              </Button>
+            <TabsContent value="api" className="space-y-4 mt-4">
+              <h3 className="text-lg font-semibold">API Configuration</h3>
               
-              {testResult && (
-                <Typography 
-                  variant="body2" 
-                  color={testResult.success ? 'success.main' : 'error.main'}
-                >
-                  {testResult.message}
-                </Typography>
-              )}
-            </Box>
-            
-            {/* Available Models Section */}
-            {(availableModels.length > 0 || settings.availableModels?.length > 0) && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Available Models
-                  {isTesting && <CircularProgress size={16} sx={{ ml: 1 }} />}
-                </Typography>
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Configure your API settings here. The system uses two separate API endpoints: one for AI generation (LLM API) and one for document retrieval (Backend API).
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">LLM API Settings</h4>
+                  <p className="text-sm text-muted-foreground">
+                    These settings control where chat messages and completions are sent for AI text generation.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="llm-url" className="text-sm font-medium">LLM API Base URL</label>
+                      <Input
+                        id="llm-url"
+                        value={localSettings.apiBaseUrl}
+                        onChange={(e) => handleChange('apiBaseUrl', e.target.value)}
+                        placeholder="e.g., http://localhost:8553/v1/openai"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        The URL for LLM text generation (e.g., http://localhost:8553/v1/openai for Dell Pro AI Studio)
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="api-key" className="text-sm font-medium">API Key</label>
+                      <Input
+                        id="api-key"
+                        type="password"
+                        value={localSettings.apiKey}
+                        onChange={(e) => handleChange('apiKey', e.target.value)}
+                        placeholder="Enter API key"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        API key for authentication (use 'dpais' for Dell Pro AI Studio)
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 
-                <Paper variant="outlined" sx={{ maxHeight: '300px', overflow: 'auto', p: 1 }}>
-                  <List dense sx={{ width: '100%' }}>
-                    {(availableModels.length > 0 ? availableModels : (settings.availableModels || [])).map((modelId) => {
-                      // Get display name without compute type prefix and without parameter size
-                      let displayName = modelId;
-                      const prefixes = ['public-cloud/', 'private-cloud/', 'GPU/', 'NPU/', 'CPU/', 'dNPU'];
-                      
-                      for (const prefix of prefixes) {
-                        if (displayName.startsWith(prefix)) {
-                          displayName = displayName.substring(prefix.length);
-                          break;
-                        }
-                      }
-                      
-                      // Extract the model name and parameter size
-                      const parts = displayName.split(':');
-                      let modelName, paramSize;
-                      
-                      if (parts.length >= 2) {
-                        modelName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-                        paramSize = parts[1];
-                      } else {
-                        modelName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-                        paramSize = null;
-                      }
-                      
-                      // Get the current enabled state (default to true if not specified)
-                      const enabled = settings.enabledModels?.[modelId] !== false;
-                      
-                      // Check if this is the default model
-                      const isDefault = settings.defaultModel === modelId;
-                      
-                      // Get compute location tag if available
-                      const tag = settings.modelTags?.[modelId];
-                      
-                      // Get model capability (if available)
-                      const capability = settings.modelCapabilities?.[modelId];
-                      
-                      // Check if model can be toggled (only TextToText or TextToTextWithTools models)
-                      const canBeToggled = capability === 'TextToText' || capability === 'TextToTextWithTools';
-
-                      // Helper function to get tag color based on compute location
-                      const getTagColor = (tagValue: string): string => {
-                        switch(tagValue) {
-                          case 'public-cloud': return 'info';
-                          case 'private-cloud': return 'success';
-                          case 'GPU': return 'error';
-                          case 'NPU': return 'warning';
-                          case 'CPU': return 'default';
-                          default: return 'default';
-                        }
-                      };
-                      
-                      return (
-                        <ListItem
-                          key={modelId}
-                          sx={{
-                            py: 0.5,
-                            display: 'grid',
-                            gridTemplateColumns: '56px minmax(140px, 0.8fr) minmax(180px, 1.2fr) 100px',
-                            alignItems: 'center',
-                            gap: 0,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            '&:last-child': {
-                              borderBottom: 'none'
-                            }
-                          }}
-                          disableGutters
-                        >
-                          {/* Column 1: Toggle Switch */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', pl: 1 }}>
-                            <Switch 
-                              size="small"
-                              checked={enabled}
-                              disabled={!canBeToggled}
-                              onChange={(e) => {
-                                const newEnabledModels = {
-                                  ...(settings.enabledModels || {}),
-                                  [modelId]: e.target.checked
-                                };
+                <Separator />
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Backend API Settings</h4>
+                  <p className="text-sm text-muted-foreground">
+                    These settings control document retrieval, embeddings, and other vector database operations.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="backend-url" className="text-sm font-medium">Backend API URL</label>
+                      <Input
+                        id="backend-url"
+                        value={localSettings.backendUrl}
+                        onChange={(e) => handleChange('backendUrl', e.target.value)}
+                        placeholder="e.g., http://localhost:8000"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        The URL for the backend API (e.g., http://localhost:8000 for local development)
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="streaming"
+                        checked={localSettings.streamingEnabled}
+                        onCheckedChange={(checked) => handleChange('streamingEnabled', checked)}
+                      />
+                      <label htmlFor="streaming" className="text-sm font-medium">
+                        Enable streaming responses
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Available Models</h4>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      onClick={handleTestConnection} 
+                      disabled={isLoading}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isLoading ? 'Testing...' : 'Test Connection'}
+                    </Button>
+                    
+                    {testStatus === 'success' && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        Connection successful
+                      </Badge>
+                    )}
+                    
+                    {testStatus === 'error' && (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        Connection failed
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {availableModels.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Enable models for chat:</p>
+                      <div className="space-y-2">
+                        {availableModels.map((model) => (
+                          <div key={model} className="flex items-center space-x-2">
+                            <Switch
+                              id={`model-${model}`}
+                              checked={localSettings.enabledModels?.includes(model) || false}
+                              onCheckedChange={(checked) => {
+                                const newEnabledModels = checked
+                                  ? [...(localSettings.enabledModels || []), model]
+                                  : (localSettings.enabledModels || []).filter((m: string) => m !== model);
                                 handleChange('enabledModels', newEnabledModels);
-                                
-                                // If disabling the default model, clear the default
-                                if (!e.target.checked && isDefault) {
-                                  handleChange('defaultModel', '');
-                                }
                               }}
                             />
-                          </Box>
-                          
-                          {/* Column 2: Model Name */}
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              fontWeight: enabled ? 'medium' : 'normal',
-                              opacity: canBeToggled ? 1 : 0.7,
-                              pl: 1,
-                              pr: 2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {modelName}
-                          </Typography>
-                          
-                          {/* Column 3: Tags/Chips */}
-                          <Box sx={{ 
-                            display: 'flex', 
-                            gap: 0.75, 
-                            flexWrap: 'wrap',
-                            justifyContent: 'flex-start',
-                            alignItems: 'center',
-                            pl: 0
-                          }}>
-                            {tag && (
-                              <Chip 
-                                size="small"
-                                label={tag}
-                                color={getTagColor(tag) as any}
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem' }}
-                              />
-                            )}
-                            {paramSize && (
-                              <Chip 
-                                size="small"
-                                label={paramSize}
-                                color="primary"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem' }}
-                              />
-                            )}
-                            {capability && capability !== 'TextToText' && capability !== 'TextToTextWithTools' && (
-                              <Chip 
-                                size="small"
-                                label={capability}
-                                color="default"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem', opacity: 0.7 }}
-                              />
-                            )}
-                          </Box>
-                          
-                          {/* Column 4: Default Switch */}
-                          <Box sx={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: canBeToggled ? 'flex-start' : 'center',
-                            pr: 1
-                          }}>
-                            {canBeToggled && (
-                              <FormControlLabel
-                                control={
-                                  <Switch
-                                    size="small"
-                                    checked={isDefault}
-                                    disabled={!enabled}
-                                    color="secondary"
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        // Set this as the default model
-                                        handleChange('defaultModel', modelId);
-                                      } else if (isDefault) {
-                                        // If unchecking the current default, clear it
-                                        handleChange('defaultModel', '');
-                                      }
-                                    }}
-                                  />
-                                }
-                                label={
-                                  <Typography 
-                                    variant="caption" 
-                                    color="secondary"
-                                    sx={{ opacity: enabled ? 1 : 0.5 }}
-                                  >
-                                    Default
-                                  </Typography>
-                                }
-                                sx={{ m: 0 }}
-                              />
-                            )}
-                          </Box>
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                </Paper>
-              </>
-            )}
-          </Box>
-        )}
-
-        {activeTab === 'appearance' && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Theme Selection */}
-            <Typography variant="h6" gutterBottom>
-              Appearance
-            </Typography>
+                            <label htmlFor={`model-${model}`} className="text-sm">
+                              {model}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
             
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="theme-select-label">Theme</InputLabel>
-              <Select
-                labelId="theme-select-label"
-                value={settings.selectedTheme}
-                onChange={(e) => handleChange('selectedTheme', e.target.value)}
-                label="Theme"
-              >
-                <MenuItem value="light">Light</MenuItem>
-                <MenuItem value="dark">Dark</MenuItem>
-                <MenuItem value="oled">OLED Black</MenuItem>
-                <MenuItem value="custom">Custom</MenuItem>
-              </Select>
-            </FormControl>
-            
-            {/* Custom Theme Editor - only show if custom theme selected */}
-            {settings.selectedTheme === 'custom' && settings.customTheme && (
-              <Box sx={{ mt: 2, p: 0 }}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2, height: '100%' }}>
-                      <Typography variant="subtitle1" gutterBottom>
-                        Custom Theme Editor
-                      </Typography>
-                      
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" gutterBottom>
-                          Start from preset:
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            onClick={() => handlePreviewTheme('light')}
-                          >
-                            Light
-                          </Button>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            onClick={() => handlePreviewTheme('dark')}
-                          >
-                            Dark
-                          </Button>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            onClick={() => handlePreviewTheme('oled')}
-                          >
-                            OLED
-                          </Button>
-                        </Box>
-                      </Box>
-                      
-                      <Divider sx={{ mb: 2 }} />
-                      
+            <TabsContent value="appearance" className="space-y-4 mt-4">
+              <h3 className="text-lg font-semibold">Appearance Settings</h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Theme</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {Object.entries(DEFAULT_THEMES).map(([key, theme]) => (
+                      <Card 
+                        key={key}
+                        className={`overflow-hidden cursor-pointer border-2 ${
+                          localSettings.theme === key ? 'border-primary' : 'border-border'
+                        }`}
+                        onClick={() => {
+                          handleChange('theme', key);
+                          handlePreviewTheme(theme);
+                        }}
+                      >
+                        <CardHeader className="p-3 bg-primary">
+                          <CardTitle className="text-primary-foreground text-sm">{theme.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3">
+                          <div 
+                            className="h-6 w-full rounded"
+                            style={{ backgroundColor: theme.primary }}
+                          ></div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    <Card 
+                      className={`overflow-hidden cursor-pointer border-2 ${
+                        localSettings.theme === 'custom' ? 'border-primary' : 'border-border'
+                      }`}
+                      onClick={() => {
+                        handleChange('theme', 'custom');
+                        handlePreviewTheme(localSettings.customTheme);
+                      }}
+                    >
+                      <CardHeader className="p-3 bg-primary">
+                        <CardTitle className="text-primary-foreground text-sm">Custom Theme</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        <div 
+                          className="h-6 w-full rounded"
+                          style={{ backgroundColor: localSettings.customTheme?.primary }}
+                        ></div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+                
+                {localSettings.theme === 'custom' && (
+                  <div className="space-y-4">
+                    <h4 className="text-base font-medium">Custom Theme Colors</h4>
+                    <div className="space-y-2">
                       <ColorPickerInput
                         label="Primary"
-                        color={settings.customTheme.primary}
-                        onChange={(value) => handleCustomThemeChange('primary', value)}
+                        color={localSettings.customTheme?.primary || '#007db8'}
+                        onChange={(color) => handleCustomThemeChange('primary', color)}
                       />
                       <ColorPickerInput
                         label="Secondary"
-                        color={settings.customTheme.secondary}
-                        onChange={(value) => handleCustomThemeChange('secondary', value)}
-                      />
-                      <ColorPickerInput
-                        label="Accent"
-                        color={settings.customTheme.accent}
-                        onChange={(value) => handleCustomThemeChange('accent', value)}
+                        color={localSettings.customTheme?.secondary || '#444444'}
+                        onChange={(color) => handleCustomThemeChange('secondary', color)}
                       />
                       <ColorPickerInput
                         label="Background"
-                        color={settings.customTheme.background}
-                        onChange={(value) => handleCustomThemeChange('background', value)}
-                      />
-                      <ColorPickerInput
-                        label="Paper"
-                        color={settings.customTheme.paper}
-                        onChange={(value) => handleCustomThemeChange('paper', value)}
+                        color={localSettings.customTheme?.background || '#ffffff'}
+                        onChange={(color) => handleCustomThemeChange('background', color)}
                       />
                       <ColorPickerInput
                         label="Text"
-                        color={settings.customTheme.text}
-                        onChange={(value) => handleCustomThemeChange('text', value)}
+                        color={localSettings.customTheme?.text || '#333333'}
+                        onChange={(color) => handleCustomThemeChange('text', color)}
                       />
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    {renderThemePreview()}
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {activeTab === 'assistant' && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* System Message Section */}
-            <Accordion defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6" className="settings-section-title">
-                  <SmartToyIcon sx={{ mr: 1 }} />
-                  AI Assistant Behavior
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography variant="subtitle2" gutterBottom>
-                  System Message
-                  <Tooltip title="This message defines how the AI assistant behaves">
-                    <IconButton size="small" sx={{ ml: 1 }}>
-                      <InfoIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  variant="outlined"
-                  placeholder="You are a state-of-the-art AI assistant renowned for accuracy, clarity, and thoughtful insights. Your mission is to provide detailed, well-reasoned answers that are both user-friendly and reliable. Always interpret the user's intent carefully—if a query is ambiguous, ask clarifying questions before responding. When uncertain about a fact, admit 'I don't know' rather than guessing. Use a professional, yet warm tone, break down complex topics into understandable steps, and maintain consistency in style. Prioritize factual accuracy, and if new information is requested that falls outside your training, state your limitations clearly."
-                  value={systemMessage}
-                  onChange={(e) => setSystemMessage(e.target.value)}
-                  helperText="Customize how the AI assistant behaves. Leave blank to use the default behavior."
-                  margin="normal"
-                />
-              </AccordionDetails>
-            </Accordion>
+                    </div>
+                  </div>
+                )}
+                
+                {previewTheme && (
+                  <div className="space-y-2">
+                    <h4 className="text-base font-medium">Preview</h4>
+                    {renderThemePreview(previewTheme)}
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Font Size</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">Small</span>
+                      <Slider
+                        value={[localSettings.fontSize || 16]}
+                        min={12}
+                        max={20}
+                        step={1}
+                        onValueChange={(value) => handleChange('fontSize', value[0])}
+                        className="w-64"
+                      />
+                      <span className="text-sm">Large</span>
+                    </div>
+                    <p className="text-sm" style={{ fontSize: `${localSettings.fontSize || 16}px` }}>
+                      Sample text at {localSettings.fontSize || 16}px
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
             
-            {/* Text-to-Speech Settings Section */}
-            <Accordion defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6" className="settings-section-title">
-                  <VolumeUpIcon sx={{ mr: 1 }} />
-                  Text-to-Speech Settings
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel id="tts-model-label">TTS Model</InputLabel>
-                      <Select
-                        labelId="tts-model-label"
-                        value={settings.ttsModel || 'kokoro'}
-                        onChange={(e) => handleChange('ttsModel', e.target.value)}
-                        label="TTS Model"
-                      >
-                        <MenuItem value="kokoro">Kokoro</MenuItem>
-                        <MenuItem value="audio-nova">Audio Nova</MenuItem>
-                        <MenuItem value="tts-1">TTS-1</MenuItem>
-                        <MenuItem value="tts-1-hd">TTS-1-HD</MenuItem>
-                      </Select>
-                      <FormHelperText>Model used for text-to-speech conversion</FormHelperText>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel id="tts-voice-label">TTS Voice</InputLabel>
-                      <Select
-                        labelId="tts-voice-label"
-                        value={settings.ttsVoice || 'af_jessic'}
-                        onChange={(e) => handleChange('ttsVoice', e.target.value)}
-                        label="TTS Voice"
-                      >
-                        <MenuItem value="af_jessic">Jessic (Female)</MenuItem>
-                        <MenuItem value="shimmer">Shimmer</MenuItem>
-                        <MenuItem value="alloy">Alloy</MenuItem>
-                        <MenuItem value="echo">Echo</MenuItem>
-                        <MenuItem value="fable">Fable</MenuItem>
-                        <MenuItem value="onyx">Onyx</MenuItem>
-                        <MenuItem value="nova">Nova</MenuItem>
-                      </Select>
-                      <FormHelperText>Voice used for text-to-speech conversion</FormHelperText>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
+            <TabsContent value="assistant" className="space-y-4 mt-4">
+              <h3 className="text-lg font-semibold">Assistant Settings</h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Chat Behavior</h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="auto-scroll"
+                        checked={localSettings.autoScroll !== false}
+                        onCheckedChange={(checked) => handleChange('autoScroll', checked)}
+                      />
+                      <label htmlFor="auto-scroll" className="text-sm font-medium">
+                        Auto-scroll to new messages
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="auto-title"
+                        checked={localSettings.autoTitle !== false}
+                        onCheckedChange={(checked) => handleChange('autoTitle', checked)}
+                      />
+                      <label htmlFor="auto-title" className="text-sm font-medium">
+                        Auto-generate chat titles
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="text-to-speech"
+                        checked={localSettings.textToSpeech === true}
+                        onCheckedChange={(checked) => handleChange('textToSpeech', checked)}
+                      />
+                      <label htmlFor="text-to-speech" className="text-sm font-medium">
+                        Enable text-to-speech for assistant responses
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">System Prompt</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Customize the system prompt that defines the assistant's behavior.
+                  </p>
+                  
+                  <Textarea
+                    value={localSettings.systemPrompt || ''}
+                    onChange={(e) => handleChange('systemPrompt', e.target.value)}
+                    placeholder="You are a helpful assistant..."
+                    className="min-h-[150px]"
+                  />
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleChange('systemPrompt', 'You are a helpful assistant that provides accurate, concise information. If you don\'t know something, admit it rather than making up an answer.')}
+                  >
+                    Reset to Default
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Model Parameters</h4>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <label htmlFor="temperature" className="text-sm font-medium">Temperature: {localSettings.temperature || 0.7}</label>
+                      </div>
+                      <Slider
+                        id="temperature"
+                        value={[localSettings.temperature || 0.7]}
+                        min={0}
+                        max={2}
+                        step={0.1}
+                        onValueChange={(value) => handleChange('temperature', value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Lower values make responses more deterministic, higher values more creative.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <label htmlFor="max-tokens" className="text-sm font-medium">Max Tokens: {localSettings.maxTokens || 2000}</label>
+                      </div>
+                      <Slider
+                        id="max-tokens"
+                        value={[localSettings.maxTokens || 2000]}
+                        min={100}
+                        max={4000}
+                        step={100}
+                        onValueChange={(value) => handleChange('maxTokens', value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Maximum number of tokens in the response.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
             
-            {/* RAG Settings Section */}
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6" className="settings-section-title">
-                  <ArticleIcon sx={{ mr: 1 }} />
-                  RAG Settings
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.strictRagMode === true}
-                        onChange={(e) => handleChange('strictRagMode', e.target.checked)}
-                      />
-                    }
-                    label="Strict RAG Mode"
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    When enabled, the assistant will only use information explicitly stated in the retrieved documents and will not use its general knowledge.
-                  </Typography>
-                  
-                  <Divider sx={{ my: 1 }} />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.showDocumentSources !== false}
-                        onChange={(e) => handleChange('showDocumentSources', e.target.checked)}
-                      />
-                    }
-                    label="Show Document Sources"
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    When enabled, the assistant will cite document sources in its responses.
-                  </Typography>
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          </Box>
-        )}
-
-        {activeTab === 'documents' && (
-          <Box sx={{ 
-            mt: 2, 
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            height: '400px',
-            overflow: 'hidden'
-          }}>
-            <Typography variant="subtitle1" sx={{ 
-              p: 2, 
-              pb: 1, 
-              borderBottom: '1px solid',
-              borderBottomColor: 'divider'
-            }}>
-              Document Library
-            </Typography>
-            <Box sx={{ height: 'calc(100% - 48px)', overflow: 'auto' }}>
-              <DocumentLibrary />
-            </Box>
-          </Box>
-        )}
+            <TabsContent value="documents" className="space-y-4 mt-4">
+              <h3 className="text-lg font-semibold">Document Settings</h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Document Upload</h4>
+                  <DocumentUpload />
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium">Document Library</h4>
+                  <DocumentLibrary height={300} />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="vectorDb" className="space-y-4 mt-4">
+              <h3 className="text-lg font-semibold">Vector Database Settings</h3>
+              <VectorDatabaseSettings onConfigurationChange={handleVectorDbConfigChange} />
+            </TabsContent>
+          </Tabs>
+        </div>
         
-        {activeTab === 'vectorDb' && (
-          <Box sx={{ mt: 2 }}>
-            <VectorDatabaseSettings onConfigurationChange={handleVectorDbConfigChange} />
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ 
-        borderTop: '1px solid',
-        borderColor: 'divider',
-        padding: 1.5,
-        mt: 'auto' // Push to bottom
-      }}>
-        <Button onClick={onClose}>Close</Button>
-        {activeTab !== 'documents' && (
-          <Button 
-            onClick={handleSave} 
-            variant="contained" 
-            color="primary"
-          >
-            Save
+        <DialogFooter className="border-t border-border pt-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
           </Button>
-        )}
-      </DialogActions>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };

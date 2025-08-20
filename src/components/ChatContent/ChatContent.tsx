@@ -12,8 +12,7 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Box } from '@mui/material';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector } from '../../store/store';
 import { WelcomeScreen } from '../WelcomeScreen/WelcomeScreen';
@@ -26,7 +25,7 @@ export const ChatContent: React.FC = () => {
   const hasMessages = messages.length > 0;
   
   return (
-    <Box className="chat-content">
+    <div className="chat-content">
       <AnimatePresence mode="wait">
         {!hasMessages ? (
           <motion.div
@@ -52,6 +51,6 @@ export const ChatContent: React.FC = () => {
       </AnimatePresence>
       
       <InputArea />
-    </Box>
+    </div>
   );
 };

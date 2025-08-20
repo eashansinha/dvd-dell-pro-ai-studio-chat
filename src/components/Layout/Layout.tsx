@@ -13,7 +13,6 @@
  */
 
 import React from 'react';
-import { Box } from '@mui/material';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatContainer } from '../ChatContainer/ChatContainer';
 import { OfflineIndicator } from '../OfflineIndicator/OfflineIndicator';
@@ -25,10 +24,10 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ onOpenSettings }) => {
   return (
-    <Box className="layout-container">
+    <div className="layout-container">
       <Sidebar onOpenSettings={onOpenSettings} />
       <ChatContainer />
       <OfflineIndicator />
-    </Box>
+    </div>
   );
 };

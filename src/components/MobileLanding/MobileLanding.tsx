@@ -13,222 +13,138 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Paper,
-  Link,
-  Divider,
-  useTheme,
-} from '@mui/material';
-import ComputerIcon from '@mui/icons-material/Computer';
-import DownloadIcon from '@mui/icons-material/Download';
-import BusinessIcon from '@mui/icons-material/Business';
+import { Monitor, Download, Building } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import { Separator } from '../ui/separator';
 
 export const MobileLanding: React.FC = () => {
-  const theme = useTheme();
-
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
-          : 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        py: 4,
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            textAlign: 'center',
-            borderRadius: 3,
-            background: theme.palette.background.paper,
-            animation: 'fadeInUp 0.6s ease-out',
-            '@keyframes fadeInUp': {
-              '0%': {
-                opacity: 0,
-                transform: 'translateY(20px)',
-              },
-              '100%': {
-                opacity: 1,
-                transform: 'translateY(0)',
-              },
-            },
-          }}
-        >
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 flex items-center py-8">
+      <div className="container max-w-lg mx-auto px-4">
+        <Card className="p-8 text-center rounded-3xl shadow-lg animate-in fade-in-0 slide-in-from-bottom-4 duration-600">
           {/* Logo/Icon */}
-          <Box
-            sx={{
-              width: 100,
-              height: 100,
-              borderRadius: 2,
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 3,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
-              }
-            }}
-          >
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                color: 'white', 
-                fontWeight: 'bold',
-                fontFamily: 'Arial, sans-serif'
-              }}
-            >
+          <div className="w-24 h-24 rounded-lg bg-primary flex items-center justify-center mx-auto mb-6 relative overflow-hidden before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent">
+            <h2 className="text-3xl font-bold text-white font-sans">
               AI
-            </Typography>
-          </Box>
+            </h2>
+          </div>
 
           {/* Title */}
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+          <h1 className="text-3xl font-bold mb-4">
             Welcome to Dell Pro AI Studio Chat
-          </Typography>
+          </h1>
 
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+          <p className="text-lg text-muted-foreground mb-8">
             A place to test out your AI PCs powered by Dell Pro AI Studio
-          </Typography>
+          </p>
 
-          <Divider sx={{ my: 3 }} />
+          <Separator className="my-6" />
 
           {/* Main message */}
-          <Typography variant="body1" paragraph sx={{ textAlign: 'left' }}>
+          <p className="text-left mb-6">
             In order to use Dell Pro AI Studio Chat, you need to be on a Dell AI PC.
-          </Typography>
+          </p>
 
           {/* Purchase AI PC Section */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 3,
-              mb: 3,
-              borderRadius: 2,
-              bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50',
-            }}
-          >
-            <ComputerIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-            <Typography variant="h6" gutterBottom>
-              Get a Dell AI PC
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Experience the power of on-device AI with Dell's latest AI-powered PCs
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              href="https://www.dell.com/en-us/lp/learn-about-ai-pcs"
-              target="_blank"
-              rel="noopener noreferrer"
-              startIcon={<ComputerIcon />}
-              fullWidth
-            >
-              Shop Dell AI PCs
-            </Button>
-          </Paper>
+          <Card className="p-6 mb-6 rounded-lg bg-muted/50">
+            <CardContent className="p-0">
+              <Monitor className="h-10 w-10 text-primary mb-2 mx-auto" />
+              <h3 className="text-lg font-semibold mb-2">
+                Get a Dell AI PC
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Experience the power of on-device AI with Dell's latest AI-powered PCs
+              </p>
+              <Button
+                className="w-full"
+                asChild
+              >
+                <a
+                  href="https://www.dell.com/en-us/lp/learn-about-ai-pcs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <Monitor className="h-4 w-4" />
+                  Shop Dell AI PCs
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Download Dell Pro AI Studio Section */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 3,
-              mb: 3,
-              borderRadius: 2,
-              bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50',
-            }}
-          >
-            <DownloadIcon sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
-            <Typography variant="h6" gutterBottom>
-              Download Dell Pro AI Studio
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Get the runtime and management layer for AI on your Dell device
-            </Typography>
-            <Button
-              variant="contained"
-              color="secondary"
-              href="https://dell.com/DellProAIStudio"
-              target="_blank"
-              rel="noopener noreferrer"
-              startIcon={<DownloadIcon />}
-              fullWidth
-            >
-              Download Dell Pro AI Studio
-            </Button>
-          </Paper>
+          <Card className="p-6 mb-6 rounded-lg bg-muted/50">
+            <CardContent className="p-0">
+              <Download className="h-10 w-10 text-secondary mb-2 mx-auto" />
+              <h3 className="text-lg font-semibold mb-2">
+                Download Dell Pro AI Studio
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get the runtime and management layer for AI on your Dell device
+              </p>
+              <Button
+                variant="secondary"
+                className="w-full"
+                asChild
+              >
+                <a
+                  href="https://dell.com/DellProAIStudio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Dell Pro AI Studio
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
 
-          <Divider sx={{ my: 3 }} />
+          <Separator className="my-6" />
 
           {/* About Dell Pro AI Studio */}
-          <Box sx={{ textAlign: 'left', mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <div className="text-left mb-6">
+            <h3 className="text-lg font-semibold mb-2">
               What is Dell Pro AI Studio?
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
               Dell Pro AI Studio is the on-device runtime and management layer that enables 
               organizations to deploy, execute, and manage AI models directly on Dell client 
               devices. It provides centralized control for IT teams to configure, monitor, 
               and update AI workloads, while ensuring models are optimized for the device's 
               hardware (CPU, GPU, NPU).
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+            </p>
+            <p className="text-sm text-muted-foreground">
               With support for policy-based deployment, version control, and runtime plugin 
               management, it simplifies the operational side of running AI locally to empower 
               scalable, secure, and efficient on-client AI execution.
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
           {/* Enterprise Link */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: theme.palette.action.hover,
-            }}
-          >
-            <BusinessIcon sx={{ fontSize: 30, color: 'info.main', mb: 1 }} />
-            <Typography variant="subtitle2" gutterBottom>
-              Enterprise Deployment
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              For more information on deployment of Dell Pro AI Studio within an 
-              enterprise environment:
-            </Typography>
-            <Link
-              href="https://dell.com/DellManagementPortal"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ 
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              Dell Management Portal - Dell Pro AI Studio
-            </Link>
-          </Paper>
-        </Paper>
-      </Container>
-    </Box>
+          <Card className="p-4 rounded-lg bg-muted/30">
+            <CardContent className="p-0">
+              <Building className="h-8 w-8 text-blue-600 mb-2 mx-auto" />
+              <h4 className="text-base font-medium mb-2">
+                Enterprise Deployment
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                For more information on deployment of Dell Pro AI Studio within an 
+                enterprise environment:
+              </p>
+              <a
+                href="https://dell.com/DellManagementPortal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Dell Management Portal - Dell Pro AI Studio
+              </a>
+            </CardContent>
+          </Card>
+        </Card>
+      </div>
+    </div>
   );
-}; 
+};  

@@ -13,25 +13,11 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  List, 
-  Button, 
-  IconButton, 
-  Tooltip, 
-  Tabs, 
-  Tab,
-  Badge,
-  Chip
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ChatIcon from '@mui/icons-material/Chat';
-import DescriptionIcon from '@mui/icons-material/Description';
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import CloudIcon from '@mui/icons-material/Cloud';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Settings, MessageCircle, FileText, NotebookPen, Cloud } from 'lucide-react';
 import { ChatHistoryItem } from '../ChatHistoryItem/ChatHistoryItem';
 import { DocumentLibrary } from '../DocumentLibrary/DocumentLibrary';
 import { CompanyDocuments } from '../CompanyDocuments/CompanyDocuments';
@@ -193,144 +179,121 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
   };
 
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      width: 350,
-      height: '100%', // Add height to allow bottom positioning
-      bgcolor: 'background.paper',
-      borderRight: '1px solid',
-      borderRightColor: 'divider',
-      overflow: 'hidden'
-    }}>
-      <Box sx={{
-        padding: 2,
-        borderBottom: '1px solid',
-        borderBottomColor: 'divider'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Dell Pro AI Studio Chat
-          </Typography>
-          <Tooltip title={isCurrentSessionEmpty ? "Enter a message first" : "New Chat"}>
-            <span> {/* Wrapper needed for disabled Tooltip */}
-              <IconButton 
-                onClick={handleNewChat} 
-                color="primary" 
-                size="small"
-                disabled={isCurrentSessionEmpty}
-              >
-                <NoteAddIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Box>
+    <TooltipProvider>
+      <div className="flex flex-col w-[350px] h-full bg-background border-r border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold flex-grow">
+              Dell Pro AI Studio Chat
+            </h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={handleNewChat} 
+                  variant="ghost"
+                  size="icon"
+                  disabled={isCurrentSessionEmpty}
+                >
+                  <NotebookPen className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isCurrentSessionEmpty ? "Enter a message first" : "New Chat"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         
         {/* Active Vector Databases Chips */}
         {activeVectorDbs.length > 0 && (
-          <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <div className="mb-4 flex flex-wrap gap-2">
             {activeVectorDbs.map(vdb => (
-              <Tooltip key={vdb.id} title={vdb.description || vdb.name}>
-                <Chip 
-                  size="small" 
-                  icon={<CloudIcon fontSize="small" />} 
-                  label={vdb.name}
-                  color="secondary"
-                  variant="outlined"
-                />
+              <Tooltip key={vdb.id}>
+                <TooltipTrigger asChild>
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Cloud className="h-3 w-3" />
+                    {vdb.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {vdb.description || vdb.name}
+                </TooltipContent>
               </Tooltip>
             ))}
-          </Box>
+          </div>
         )}
         
-        <Tabs 
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          variant="fullWidth"
-          aria-label="sidebar tabs"
-          sx={{ mb: 1 }}
-        >
-          <Tab 
-            icon={<ChatIcon />} 
-            label="Chats" 
-            value="chats"
-          />
-          <Tab 
-            icon={
-              <Badge badgeContent={documentCount} color="primary">
-                <DescriptionIcon />
-              </Badge>
-            } 
-            label="Documents" 
-            value="documents"
-          />
-          {settings.companyDocumentsEnabled && (
-            <Tab 
-              icon={
-                <Badge badgeContent={companyDbCount} color="secondary">
-                  <CloudIcon />
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'chats' | 'documents' | 'company')} className="mb-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="chats" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Chats
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2 relative">
+              <FileText className="h-4 w-4" />
+              Documents
+              {documentCount > 0 && (
+                <Badge variant="default" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                  {documentCount}
                 </Badge>
-              } 
-              label="Company" 
-              value="company"
-            />
-          )}
+              )}
+            </TabsTrigger>
+            {settings.companyDocumentsEnabled && (
+              <TabsTrigger value="company" className="flex items-center gap-2 relative">
+                <Cloud className="h-4 w-4" />
+                Company
+                {companyDbCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                    {companyDbCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
+          </TabsList>
         </Tabs>
-      </Box>
+      </div>
 
-      <Box sx={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: 2
-      }}>
-        {activeTab === 'chats' && (
-          <>
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
-                mb: 1.5, 
-                color: 'text.secondary',
-                fontWeight: 500
-              }}
-            >
-              Chat History
-            </Typography>
-            <List sx={{ padding: 0 }}>
-              {loadedSessions.map((session) => (
-                <ChatHistoryItem 
-                  key={session.sessionId} 
-                  session={session} 
-                  isActive={session.sessionId === currentSessionId} 
-                  onDelete={handleDeleteSession}
-                />
-              ))}
-            </List>
-          </>
-        )}
+      <div className="flex-1 overflow-y-auto p-4">
+        <TabsContent value="chats" className="mt-0">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+            Chat History
+          </h3>
+          <div className="space-y-1">
+            {loadedSessions.map((session) => (
+              <ChatHistoryItem 
+                key={session.sessionId} 
+                session={session} 
+                isActive={session.sessionId === currentSessionId} 
+                onDelete={handleDeleteSession}
+              />
+            ))}
+          </div>
+        </TabsContent>
         
-        {activeTab === 'documents' && (
+        <TabsContent value="documents" className="mt-0">
           <DocumentLibrary />
-        )}
+        </TabsContent>
         
-        {activeTab === 'company' && settings.companyDocumentsEnabled && (
-          <CompanyDocuments />
+        {settings.companyDocumentsEnabled && (
+          <TabsContent value="company" className="mt-0">
+            <CompanyDocuments />
+          </TabsContent>
         )}
-      </Box>
+      </div>
       
       {/* Settings button at bottom */}
-      <Box sx={{
-        padding: 2,
-        borderTop: '1px solid',
-        borderTopColor: 'divider',
-        display: 'flex',
-        justifyContent: 'flex-start' // Align to the left
-      }}>
-        <Tooltip title="Settings">
-          <IconButton onClick={onOpenSettings} color="inherit" size="medium">
-            <SettingsIcon />
-          </IconButton>
+      <div className="p-4 border-t border-border flex justify-start">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={onOpenSettings} variant="ghost" size="icon">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Settings
+          </TooltipContent>
         </Tooltip>
-      </Box>
-    </Box>
+      </div>
+    </div>
+    </TooltipProvider>
   );
 };

@@ -1,116 +1,140 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  
-  /* Light theme variables */
-  --primary-color: #10a37f;
-  --secondary-color: #6366f1;
-  --accent-color: #646cff;
-  --success-color: #22c55e;
-  --warning-color: #f59e0b;
-  --error-color: #dc2626;
-  --delete-color: rgba(211, 47, 47, 0.7);
-  
-  --background-color: #ffffff;
-  --paper-color: #f9fafb;
-  --sidebar-bg: #f9fafb;
-  
-  --border-color: rgba(0, 0, 0, 0.12);
-  --hover-bg: rgba(0, 0, 0, 0.04);
-  --active-bg: rgba(0, 0, 0, 0.08);
-  
-  --text-primary: rgba(0, 0, 0, 0.87);
-  --text-secondary: rgba(0, 0, 0, 0.6);
-  --text-disabled: rgba(0, 0, 0, 0.38);
-  
-  color-scheme: light dark;
-  color: var(--text-primary);
-  background-color: var(--background-color);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Dark theme variables */
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --primary-color: #10b981;
-    --secondary-color: #818cf8;
-    --accent-color: #818cf8;
-    --success-color: #22c55e;
-    --warning-color: #f59e0b;
-    --error-color: #ef4444;
-    --delete-color-dark: rgba(255, 82, 82, 0.8);
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
     
-    --background-color: #1e1e2e;
-    --paper-color: #2a2a3c;
-    --sidebar-bg-dark: #1a1a1a;
+    /* Custom Dell theme variables */
+    --dell-primary: 202 100% 17%;
+    --dell-secondary: 243 75% 59%;
+    --dell-accent: 220 100% 66%;
+    --dell-success: 142 76% 36%;
+    --dell-warning: 38 92% 50%;
+    --dell-error: 0 72% 51%;
+    --dell-delete: 0 65% 51%;
     
-    --border-color-dark: rgba(255, 255, 255, 0.12);
-    --hover-bg-dark: rgba(255, 255, 255, 0.08);
-    --active-bg-dark: rgba(255, 255, 255, 0.12);
+    /* Light theme specific */
+    --dell-background: 0 0% 100%;
+    --dell-paper: 210 20% 98%;
+    --dell-sidebar: 210 20% 98%;
+    --dell-text-primary: 0 0% 13%;
+    --dell-text-secondary: 0 0% 38%;
+    --dell-text-disabled: 0 0% 62%;
+    --dell-border: 0 0% 88%;
+    --dell-hover: 0 0% 96%;
+    --dell-active: 0 0% 92%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
     
-    --text-primary-dark: rgba(255, 255, 255, 0.9);
-    --text-secondary-dark: rgba(255, 255, 255, 0.7);
-    --text-disabled-dark: rgba(255, 255, 255, 0.5);
+    /* Dark theme specific */
+    --dell-primary: 184 100% 74%;
+    --dell-secondary: 270 75% 85%;
+    --dell-accent: 224 76% 94%;
+    --dell-background: 240 21% 15%;
+    --dell-paper: 240 27% 26%;
+    --dell-sidebar: 0 0% 10%;
+    --dell-text-primary: 0 0% 90%;
+    --dell-text-secondary: 0 0% 70%;
+    --dell-text-disabled: 0 0% 50%;
+    --dell-border: 0 0% 20%;
+    --dell-hover: 0 0% 15%;
+    --dell-active: 0 0% 25%;
+  }
+
+  .theme-oled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 94%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 94%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 94%;
+    --primary: 184 100% 74%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 270 75% 85%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 0%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 200 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 94%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 200 100% 50%;
+    
+    /* OLED theme specific */
+    --dell-primary: 184 100% 74%;
+    --dell-secondary: 270 75% 85%;
+    --dell-accent: 200 100% 50%;
+    --dell-background: 0 0% 0%;
+    --dell-paper: 0 0% 0%;
+    --dell-sidebar: 0 0% 0%;
+    --dell-text-primary: 0 0% 94%;
+    --dell-text-secondary: 0 0% 70%;
+    --dell-text-disabled: 0 0% 50%;
+    --dell-border: 0 0% 10%;
+    --dell-hover: 0 0% 8%;
+    --dell-active: 0 0% 12%;
   }
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
-    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background-color);
-  color: var(--text-color);
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+      'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 #root {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
 }
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-a {
-  font-weight: 500;
-  color: var(--primary-color);
-  text-decoration: inherit;
-}
-a:hover {
-  color: var(--accent-color);
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: var(--paper-color);
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: var(--primary-color);
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* Add any other global styles that need theming */

@@ -13,28 +13,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Chip,
-  IconButton,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  LinearProgress,
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
+import { 
+  CloudUpload, 
+  Trash2, 
+  Search, 
+  Loader2 
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Progress } from '../ui/progress';
+import { List, ListItem, ListItemText } from '../ui/list';
 import { DocumentManager } from '../../services/DocumentManager';
 import { DocumentDocType, DocumentChunkDocType } from '../../db/types';
 import { getDB } from '../../db/db';
@@ -231,306 +222,315 @@ export const DocumentUpload: React.FC = () => {
   };
 
   return (
-    <Box className="document-upload-container">
-      <Typography variant="h5" gutterBottom>
+    <div className="document-upload-container space-y-6">
+      <h1 className="text-2xl font-bold">
         Document Library
-      </Typography>
+      </h1>
 
-      <Paper className="upload-section">
-        <Typography variant="h6" gutterBottom>
-          Upload Documents
-        </Typography>
-        
-        <Box className="file-input-container">
-          <Button
-            variant="outlined"
-            component="label"
-            startIcon={<CloudUploadIcon />}
-            className="upload-button"
-          >
-            Select Files
-            <input
-              type="file"
-              hidden
-              multiple
-              onChange={handleFileChange}
-            />
-          </Button>
+      <Card className="upload-section">
+        <CardHeader>
+          <CardTitle>Upload Documents</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="file-input-container">
+            <Button
+              variant="outline"
+              className="upload-button"
+              asChild
+            >
+              <label className="flex items-center gap-2 cursor-pointer">
+                <CloudUpload className="h-4 w-4" />
+                Select Files
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  onChange={handleFileChange}
+                />
+              </label>
+            </Button>
+            
+            {files.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {files.length} file(s) selected
+              </p>
+            )}
+          </div>
           
-          {files.length > 0 && (
-            <Typography variant="body2">
-              {files.length} file(s) selected
-            </Typography>
+          <div className="tags-section space-y-3">
+            <h3 className="text-sm font-medium">
+              Add Tags
+            </h3>
+            
+            <div className="tag-input flex gap-2">
+              <Input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                placeholder="Add tag"
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddTag}
+                disabled={!newTag}
+              >
+                Add
+              </Button>
+            </div>
+            
+            <div className="tags-list flex flex-wrap gap-2">
+              {tags.map(tag => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="tag-chip cursor-pointer"
+                  onClick={() => handleRemoveTag(tag)}
+                >
+                  {tag} ×
+                </Badge>
+              ))}
+            </div>
+          </div>
+          
+          {/* Embedding Progress Section */}
+          {embeddingProgress && (
+            <div className="embedding-progress-container space-y-3 p-4 bg-muted/50 rounded-lg">
+              <div className="progress-header flex justify-between items-center">
+                <p className="text-sm">
+                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-2"></span>
+                  Processing {embeddingProgress.currentFile}
+                  {embeddingProgress.totalFiles && embeddingProgress.totalFiles > 1 && 
+                    ` (${embeddingProgress.fileIndex! + 1}/${embeddingProgress.totalFiles})`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {embeddingProgress.processedChunks}/{embeddingProgress.totalChunks} chunks
+                </p>
+              </div>
+              
+              <Progress 
+                value={embeddingProgress.totalChunks > 0 
+                  ? (embeddingProgress.processedChunks / embeddingProgress.totalChunks) * 100 
+                  : 0} 
+                className="w-full"
+              />
+              
+              <div className="progress-stats flex justify-between text-xs text-muted-foreground">
+                <span>
+                  Time elapsed: {formatTime(embeddingProgress.elapsedTime)}
+                </span>
+                
+                <span>
+                  {embeddingProgress.chunkProcessingRate.toFixed(1)} chunks/sec
+                </span>
+                
+                <span>
+                  Est. remaining: {formatTime(embeddingProgress.estimatedTimeRemaining)}
+                </span>
+              </div>
+            </div>
           )}
-        </Box>
-        
-        <Box className="tags-section">
-          <Typography variant="subtitle2" gutterBottom>
-            Add Tags
-          </Typography>
           
-          <Box className="tag-input">
-            <TextField
-              size="small"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-              placeholder="Add tag"
-              variant="outlined"
+          <Button
+            onClick={handleUpload}
+            disabled={files.length === 0 || uploading}
+            className="submit-button w-full"
+          >
+            {uploading && !embeddingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {uploading ? 'Embedding Documents...' : 'Add Documents'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="search-section">
+        <CardHeader>
+          <CardTitle>Search Documents</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="search-input-container flex gap-2">
+            <Input
+              placeholder="Search documents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
             />
             <Button
-              variant="outlined"
-              size="small"
-              onClick={handleAddTag}
-              disabled={!newTag}
+              onClick={handleSearch}
+              disabled={!searchQuery || searching}
+              className="flex items-center gap-2"
             >
-              Add
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Search
             </Button>
-          </Box>
+          </div>
           
-          <Box className="tags-list">
-            {tags.map(tag => (
-              <Chip
-                key={tag}
-                label={tag}
-                onDelete={() => handleRemoveTag(tag)}
-                size="small"
-                className="tag-chip"
-              />
-            ))}
-          </Box>
-        </Box>
-        
-        {/* Embedding Progress Section */}
-        {embeddingProgress && (
-          <Box className="embedding-progress-container">
-            <Box className="progress-header">
-              <Typography variant="body2">
-                <span className="chunk-pulse"></span>
-                Processing {embeddingProgress.currentFile}
-                {embeddingProgress.totalFiles && embeddingProgress.totalFiles > 1 && 
-                  ` (${embeddingProgress.fileIndex! + 1}/${embeddingProgress.totalFiles})`}
-              </Typography>
-              <Typography variant="body2">
-                {embeddingProgress.processedChunks}/{embeddingProgress.totalChunks} chunks
-              </Typography>
-            </Box>
-            
-            <Box className="progress-bar-wrapper">
-              <Box 
-                className="progress-bar"
-                sx={{ 
-                  width: embeddingProgress.totalChunks > 0 
-                    ? `${(embeddingProgress.processedChunks / embeddingProgress.totalChunks) * 100}%` 
-                    : '0%' 
-                }}
-              />
-            </Box>
-            
-            <Box className="progress-stats">
-              <Typography variant="caption">
-                Time elapsed: {formatTime(embeddingProgress.elapsedTime)}
-              </Typography>
+          {searchResults.length > 0 && (
+            <div className="search-results">
+              <h3 className="text-sm font-medium mb-3">
+                Search Results
+              </h3>
               
-              <Typography variant="caption">
-                {embeddingProgress.chunkProcessingRate.toFixed(1)} chunks/sec
-              </Typography>
-              
-              <Typography variant="caption">
-                Est. remaining: {formatTime(embeddingProgress.estimatedTimeRemaining)}
-              </Typography>
-            </Box>
-          </Box>
-        )}
-        
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleUpload}
-          disabled={files.length === 0 || uploading}
-          startIcon={uploading && !embeddingProgress ? <CircularProgress size={20} /> : null}
-          className="submit-button"
-        >
-          {uploading ? 'Embedding Documents...' : 'Add Documents'}
-        </Button>
-      </Paper>
+              <List>
+                {searchResults.map((result, index) => {
+                  const isDoc = isDocumentResult(result);
+                  const displayName = isDoc 
+                    ? result.document.metadata.filename 
+                    : `${result.document.metadata.documentName} (Chunk ${result.document.chunkIndex + 1})`;
+                    
+                  return (
+                    <ListItem
+                      key={index}
+                      className="cursor-pointer hover:bg-muted/50 rounded-md"
+                      onClick={() => {
+                        if (isDoc) {
+                          setViewDocument(result.document);
+                        } else {
+                          console.log("Viewing chunk:", result.document);
+                        }
+                      }}
+                    >
+                      <ListItemText
+                        primary={displayName}
+                        secondary={formatSearchResultSecondary(result)}
+                      />
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <Paper className="search-section">
-        <Typography variant="h6" gutterBottom>
-          Search Documents
-        </Typography>
-        
-        <Box className="search-input-container">
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSearch}
-            disabled={!searchQuery || searching}
-            startIcon={searching ? <CircularProgress size={20} /> : <SearchIcon />}
-          >
-            Search
-          </Button>
-        </Box>
-        
-        {searchResults.length > 0 && (
-          <Box className="search-results">
-            <Typography variant="subtitle2" gutterBottom>
-              Search Results
-            </Typography>
-            
+      <Card className="documents-section">
+        <CardHeader>
+          <CardTitle>Your Documents</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="loading-container flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : documents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No documents uploaded yet.
+            </p>
+          ) : (
             <List>
-              {searchResults.map((result, index) => {
-                const isDoc = isDocumentResult(result);
-                const displayName = isDoc 
-                  ? result.document.metadata.filename 
-                  : `${result.document.metadata.documentName} (Chunk ${result.document.chunkIndex + 1})`;
-                  
-                return (
-                  <ListItem
-                    key={index}
-                    button
-                    onClick={() => {
-                      if (isDoc) {
-                        setViewDocument(result.document);
-                      } else {
-                        console.log("Viewing chunk:", result.document);
-                      }
-                    }}
-                  >
+              {documents.map(doc => (
+                <ListItem
+                  key={doc.id}
+                  className="cursor-pointer hover:bg-muted/50 rounded-md flex justify-between items-start"
+                  onClick={() => setViewDocument(doc)}
+                >
+                  <div className="flex-1">
                     <ListItemText
-                      primary={displayName}
-                      secondary={formatSearchResultSecondary(result)}
+                      primary={doc.metadata.filename}
+                      secondary={
+                        <div className="space-y-2">
+                          <span className="text-sm text-muted-foreground">
+                            {formatDate(doc.metadata.uploadDate)} • {formatSize(doc.metadata.size)}
+                          </span>
+                          <div className="document-tags flex flex-wrap gap-1">
+                            {doc.metadata.tags.map(tag => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="tag-chip-small text-xs"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      }
                     />
-                  </ListItem>
-                );
-              })}
-            </List>
-          </Box>
-        )}
-      </Paper>
-
-      <Paper className="documents-section">
-        <Typography variant="h6" gutterBottom>
-          Your Documents
-        </Typography>
-        
-        {loading ? (
-          <Box className="loading-container">
-            <CircularProgress />
-          </Box>
-        ) : documents.length === 0 ? (
-          <Typography variant="body2" color="textSecondary">
-            No documents uploaded yet.
-          </Typography>
-        ) : (
-          <List>
-            {documents.map(doc => (
-              <ListItem
-                key={doc.id}
-                button
-                onClick={() => setViewDocument(doc)}
-              >
-                <ListItemText
-                  primary={doc.metadata.filename}
-                  secondary={
-                    <>
-                      <Typography variant="body2" component="span">
-                        {formatDate(doc.metadata.uploadDate)} • {formatSize(doc.metadata.size)}
-                      </Typography>
-                      <Box className="document-tags">
-                        {doc.metadata.tags.map(tag => (
-                          <Chip
-                            key={tag}
-                            label={tag}
-                            size="small"
-                            className="tag-chip-small"
-                          />
-                        ))}
-                      </Box>
-                    </>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() => setConfirmDeleteId(doc.id)}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDeleteId(doc.id);
+                    }}
+                    className="text-destructive hover:text-destructive"
                   >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Document Viewer Dialog */}
       <Dialog
         open={viewDocument !== null}
-        onClose={() => setViewDocument(null)}
-        maxWidth="md"
-        fullWidth
+        onOpenChange={(open) => !open && setViewDocument(null)}
       >
         {viewDocument && (
-          <>
-            <DialogTitle>
-              {viewDocument.metadata.filename}
-              <Typography variant="body2" color="textSecondary">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>{viewDocument.metadata.filename}</DialogTitle>
+              <p className="text-sm text-muted-foreground">
                 {formatDate(viewDocument.metadata.uploadDate)} • {formatSize(viewDocument.metadata.size)}
-              </Typography>
-            </DialogTitle>
-            <DialogContent dividers>
-              <Box className="document-tags-header">
+              </p>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-auto space-y-4">
+              <div className="document-tags-header flex flex-wrap gap-2">
                 {viewDocument.metadata.tags.map(tag => (
-                  <Chip
+                  <Badge
                     key={tag}
-                    label={tag}
-                    size="small"
+                    variant="secondary"
                     className="tag-chip"
-                  />
+                  >
+                    {tag}
+                  </Badge>
                 ))}
-              </Box>
-              <Paper className="document-content">
-                <pre>{viewDocument.content}</pre>
-              </Paper>
-            </DialogContent>
-            <DialogActions>
+              </div>
+              <Card className="document-content">
+                <CardContent className="p-4">
+                  <pre className="whitespace-pre-wrap text-sm">{viewDocument.content}</pre>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <DialogFooter>
               <Button onClick={() => setViewDocument(null)}>Close</Button>
-            </DialogActions>
-          </>
+            </DialogFooter>
+          </DialogContent>
         )}
       </Dialog>
 
       {/* Confirm Delete Dialog */}
       <Dialog
         open={confirmDeleteId !== null}
-        onClose={() => setConfirmDeleteId(null)}
+        onOpenChange={(open) => !open && setConfirmDeleteId(null)}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
             Are you sure you want to delete this document? This action cannot be undone.
-          </Typography>
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-          <Button 
-            onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
-}; 
+};    

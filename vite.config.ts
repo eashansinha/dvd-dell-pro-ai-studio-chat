@@ -5,6 +5,9 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  css: {
+    postcss: './postcss.config.js',
+  },
   plugins: [react(), VitePWA({
     registerType: 'prompt',
     injectRegister: false,

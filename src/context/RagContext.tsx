@@ -13,10 +13,6 @@
  */
 
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { Button } from '@mui/material';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { DocumentReferences } from '../components/DocumentReferences/DocumentReferences';
 
 export interface DocumentChunk {
   content: string;
@@ -50,4 +46,4 @@ export const useRag = () => {
     throw new Error('useRag must be used within a RagProvider');
   }
   return context;
-}; 
+};  
