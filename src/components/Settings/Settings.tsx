@@ -13,53 +13,26 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  TextField, 
-  Typography,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Grid,
-  Paper,
-  Tabs,
-  Tab,
-  Switch,
-  FormControlLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tooltip,
-  IconButton,
-  Slider,
-  FormHelperText,
-  Alert,
-  Chip
-} from '@mui/material';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Switch } from '../ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Slider } from '../ui/slider';
 import { ThemeConfig, DEFAULT_THEMES } from '../../theme/themeConfig';
 import { DocumentUpload } from '../DocumentUpload/DocumentUpload';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import InfoIcon from '@mui/icons-material/Info';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ArticleIcon from '@mui/icons-material/Article';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import CloudIcon from '@mui/icons-material/Cloud';
-import DatabaseIcon from '@mui/icons-material/Storage';
+import { ChevronDown, Info, Settings, FileText, Bot, Cloud, Database, Volume2 } from 'lucide-react';
 import { DocumentLibrary } from '../DocumentLibrary/DocumentLibrary';
 import { VectorDatabaseSettings } from './VectorDatabaseSettings';
 import { vectorDbService } from '../../services/VectorDbService';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { ModelService } from '../../services/ModelService';
 
 // Custom color picker component
@@ -69,34 +42,27 @@ const ColorPickerInput: React.FC<{
   onChange: (color: string) => void;
 }> = ({ label, color, onChange }) => {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-      <Typography variant="body2" sx={{ minWidth: 100 }}>{label}</Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box 
-          sx={{ 
-            width: 36, 
-            height: 36, 
-            borderRadius: 1, 
-            bgcolor: color,
-            border: '1px solid',
-            borderColor: theme => theme.palette.divider
-          }} 
+    <div className="flex items-center gap-2 mb-1">
+      <span className="text-sm min-w-[100px]">{label}</span>
+      <div className="flex items-center gap-1">
+        <div 
+          className="w-9 h-9 rounded border border-border"
+          style={{ backgroundColor: color }}
         />
-        <TextField
+        <Input
           type="text"
-          size="small"
           value={color}
           onChange={(e) => onChange(e.target.value)}
-          sx={{ width: 120 }}
+          className="w-[120px]"
         />
         <input
           type="color"
           value={color}
           onChange={(e) => onChange(e.target.value)}
-          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+          className="w-10 h-10 p-0 border-none cursor-pointer"
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

@@ -13,44 +13,30 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Separator } from '../ui/separator';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Switch } from '../ui/switch';
 import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Chip,
-  Paper,
-  CircularProgress,
-  Autocomplete,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemButton,
-  IconButton,
-  Tooltip,
-  Divider,
-  FormControlLabel,
-  Switch,
-  Badge,
-  Alert,
-  Collapse
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  Cloud as CloudIcon,
-  Storage as StorageIcon,
-  Dataset as DatabaseIcon,
-  FilterAlt as FilterAltIcon,
-  FilterAltOff as FilterAltOffIcon,
-  Chat as ChatIcon,
-  Add as AddIcon,
-  CheckCircle as CheckCircleIcon,
-  Info as InfoIcon,
-  SyncAlt as SyncAltIcon,
-  LocalOffer as LocalOfferIcon,
-  CloudOff as CloudOffIcon
-} from '@mui/icons-material';
+  Search,
+  Cloud,
+  HardDrive,
+  Database,
+  Filter,
+  FilterX,
+  MessageCircle,
+  Plus,
+  CheckCircle,
+  Info,
+  RefreshCw,
+  Tag,
+  CloudOff
+} from 'lucide-react';
 import { vectorDbService } from '../../services/VectorDbService';
 import { VectorDbConfig } from '../../types/vectorDb';
 import { useAppDispatch, useAppSelector, startSession } from '../../store/store';
@@ -1148,4 +1134,4 @@ export const CompanyDocuments: React.FC = () => {
       </Box>
     </Box>
   );
-}; 
+};  
