@@ -41,4 +41,18 @@ services:
       - POSTGRES_DB=vectordb
     volumes:
       - ./data/pgvector:/var/lib/postgresql/data  # Local directory mount for persistent data
-      - ./scripts/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql 
+      - ./scripts/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-db
+    network_mode: "host"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    ports:
+      - "6333:6333"
+      - "6334:6334"   

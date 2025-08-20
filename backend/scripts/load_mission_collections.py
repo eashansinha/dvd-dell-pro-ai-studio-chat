@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('load_mission_collections')
 
-def load_collections(collections_file, connection_string, table_name="documents", drop_tables=False):
+def load_collections(collections_file, connection_string, table_name="documents", drop_tables=False, vector_store="pgvector"):
     """Load collections from a JSON file and process them"""
     
     # Load the collections file
@@ -45,25 +45,36 @@ def load_collections(collections_file, connection_string, table_name="documents"
         
         logger.info(f"Processing collection: {collection_name} ({collection_id})")
         
-        # Build command for pdf_to_pgvector.py
-        command = [
-            "python", 
-            os.path.join(os.path.dirname(__file__), "pdf_to_pgvector.py"),
-            "--collection-name", collection_name,
-            "--collection-id", collection_id,
-            "--connection-string", connection_string,
-            "--table-name", table_name
-        ]
+        # Build command based on vector store type
+        if vector_store.lower() == "qdrant":
+            script_name = "pdf_to_qdrant.py"
+            command = [
+                "python", 
+                os.path.join(os.path.dirname(__file__), script_name),
+                "--collection", collection_id
+            ]
+        else:
+            script_name = "pdf_to_pgvector.py"
+            command = [
+                "python", 
+                os.path.join(os.path.dirname(__file__), script_name),
+                "--collection-name", collection_name,
+                "--collection-id", collection_id,
+                "--connection-string", connection_string,
+                "--table-name", table_name
+            ]
         
-        # Add drop-tables flag if requested
-        if drop_tables:
+        # Add drop-tables flag if requested (only for pgvector)
+        if drop_tables and vector_store.lower() != "qdrant":
             command.append("--drop-tables")
+        elif drop_tables and vector_store.lower() == "qdrant":
+            command.append("--clear")
         
         # Add URLs
         for url in pdf_urls:
             command.extend(["--urls", url])
         
-        # Add tags - one --tags argument per tag
+        # Add tags
         for tag in collection_tags:
             command.extend(["--tags", tag])
         
@@ -76,7 +87,7 @@ def load_collections(collections_file, connection_string, table_name="documents"
             logger.error(f"Error processing collection {collection_name}: {e}")
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Load NASA mission collections into pgvector")
+    parser = argparse.ArgumentParser(description="Load NASA mission collections into vector database")
     
     parser.add_argument('--collections-file', type=str, 
                         default=os.path.join(os.path.dirname(__file__), "mission_collections.json"),
@@ -84,13 +95,16 @@ def parse_arguments():
     
     parser.add_argument('--connection-string', type=str, 
                        default=os.getenv("PGVECTOR_CONNECTION_STRING", "postgresql://postgres:postgres@localhost:5432/vectordb"),
-                       help='PostgreSQL connection string')
+                       help='PostgreSQL connection string (for pgvector)')
     
     parser.add_argument('--table-name', type=str, 
                        default=os.getenv("PGVECTOR_TABLE_NAME", "documents"),
-                       help='Name of the table to store documents')
+                       help='Name of the table to store documents (for pgvector)')
     
-    parser.add_argument('--drop-tables', action='store_true', help='Drop existing tables before processing')
+    parser.add_argument('--vector-store', type=str, choices=['pgvector', 'qdrant'], 
+                       default='pgvector', help='Vector store to use (pgvector or qdrant)')
+    
+    parser.add_argument('--drop-tables', action='store_true', help='Drop existing tables/collections before processing')
     
     return parser.parse_args()
 
@@ -100,8 +114,9 @@ def main():
         collections_file=args.collections_file,
         connection_string=args.connection_string,
         table_name=args.table_name,
-        drop_tables=args.drop_tables
+        drop_tables=args.drop_tables,
+        vector_store=args.vector_store
     )
 
 if __name__ == "__main__":
-    main() 
+    main()    
