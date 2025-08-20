@@ -177,35 +177,59 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Load PDF files into Qdrant vector database")
-    parser.add_argument("pdf_path", help="Path to PDF file or directory containing PDFs")
+    parser.add_argument("pdf_path", nargs="?", help="Path to PDF file or directory containing PDFs")
+    parser.add_argument("--urls", action="append", help="URLs to download PDFs from")
     parser.add_argument("--collection", help="Collection ID for the documents")
     parser.add_argument("--tags", nargs="*", help="Tags to add to the documents")
     parser.add_argument("--clear", action="store_true", help="Clear collection before loading")
     
     args = parser.parse_args()
     
+    if not args.pdf_path and not args.urls:
+        parser.error("Either pdf_path or --urls must be provided")
+    
     try:
         if args.clear:
             qdrant_service = QdrantService()
             qdrant_service.clear_collection(args.collection)
         
-        pdf_path = Path(args.pdf_path)
         total_chunks = 0
         
-        if pdf_path.is_file() and pdf_path.suffix.lower() == '.pdf':
-            total_chunks = process_pdf_file(str(pdf_path), args.collection, args.tags)
-        elif pdf_path.is_dir():
-            pdf_files = list(pdf_path.glob("*.pdf"))
-            if not pdf_files:
-                print(f"No PDF files found in directory: {pdf_path}")
-                return
+        if args.urls:
+            import tempfile
+            import requests
             
-            for pdf_file in pdf_files:
-                chunks = process_pdf_file(str(pdf_file), args.collection, args.tags)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                for i, url in enumerate(args.urls):
+                    print(f"Downloading PDF from {url}...")
+                    response = requests.get(url)
+                    response.raise_for_status()
+                    
+                    pdf_path = Path(temp_dir) / f"document_{i}.pdf"
+                    with open(pdf_path, 'wb') as f:
+                        f.write(response.content)
+                    
+                    chunks = process_pdf_file(str(pdf_path), args.collection, args.tags)
+                    total_chunks += chunks
+        
+        if args.pdf_path:
+            pdf_path = Path(args.pdf_path)
+        
+            if pdf_path.is_file() and pdf_path.suffix.lower() == '.pdf':
+                chunks = process_pdf_file(str(pdf_path), args.collection, args.tags)
                 total_chunks += chunks
-        else:
-            print(f"Invalid path or not a PDF file: {pdf_path}")
-            return
+            elif pdf_path.is_dir():
+                pdf_files = list(pdf_path.glob("*.pdf"))
+                if not pdf_files:
+                    print(f"No PDF files found in directory: {pdf_path}")
+                    return
+                
+                for pdf_file in pdf_files:
+                    chunks = process_pdf_file(str(pdf_file), args.collection, args.tags)
+                    total_chunks += chunks
+            else:
+                print(f"Invalid path or not a PDF file: {pdf_path}")
+                return
         
         print(f"\nTotal chunks loaded into Qdrant: {total_chunks}")
         
