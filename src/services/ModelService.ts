@@ -12,9 +12,16 @@
  * limitations under the License.
  */
 
-import { store } from '../store/store';
+/**
+ * Model service for managing AI models, fetching available models, and initialization
+ * Handles model discovery, capability detection, and settings management
+ */
+
 import { getSettings, saveSettings } from '../utils/settings';
 
+/**
+ * Interface representing an AI model with metadata
+ */
 interface Model {
   id: string;
   tag: string | null;
@@ -23,6 +30,9 @@ interface Model {
   baseName: string;
 }
 
+/**
+ * Result interface for model fetching operations
+ */
 interface FetchModelsResult {
   success: boolean;
   message: string;
@@ -32,8 +42,17 @@ interface FetchModelsResult {
   updatedEnabledModels?: Record<string, boolean>;
 }
 
+/**
+ * Service for managing AI models, including fetching available models and initialization
+ */
 export class ModelService {
-  static async fetchModels(apiBaseUrl: string, apiKey: string, silent = false): Promise<FetchModelsResult> {
+  /**
+   * Fetch available models from the API endpoint
+   * @param apiBaseUrl - The base URL for the API
+   * @param apiKey - The API key for authentication
+   * @returns Promise resolving to fetch result with models and metadata
+   */
+  static async fetchModels(apiBaseUrl: string, apiKey: string): Promise<FetchModelsResult> {
     if (!apiBaseUrl || !apiKey) {
       return {
         success: false,
@@ -102,7 +121,7 @@ export class ModelService {
           };
         });
         
-        // Deduplicate models by base name, preferring TextToTextWithTools over TextToText
+        // Deduplicate models by ID, preferring TextToTextWithTools over TextToText capability
         const modelMap = new Map<string, Model>();
         mappedModels.forEach((model: Model) => {
           const existing = modelMap.get(model.id);
@@ -139,7 +158,7 @@ export class ModelService {
         const currentEnabledModels = savedSettings.enabledModels || {};
         const updatedEnabledModels = { ...currentEnabledModels };
         
-        // Set enabled state based on model capabilities
+        // Set enabled state based on model capabilities - only text generation models are enabled by default
         models.forEach((model: Model) => {
           // If model is not a text generation model, ensure it's disabled
           if (!model.isTextToTextModel) {
@@ -195,9 +214,9 @@ export class ModelService {
       let retryCount = 0;
       const maxRetries = 3;
       
-      // Retry logic for better offline/startup handling
+      // Retry logic for better offline/startup handling with exponential backoff
       while (retryCount < maxRetries && (!result || !result.success)) {
-        result = await this.fetchModels(savedSettings.apiBaseUrl, savedSettings.apiKey, true);
+        result = await this.fetchModels(savedSettings.apiBaseUrl, savedSettings.apiKey);
         
         if (!result.success && retryCount < maxRetries - 1) {
           console.log(`Model fetch attempt ${retryCount + 1} failed, retrying in 2 seconds...`);
@@ -242,4 +261,4 @@ export class ModelService {
       }
     }
   }
-} 
+}      

@@ -14,7 +14,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Define the shape of our settings
+/**
+ * Interface defining the shape of application settings
+ */
 interface Settings {
   apiKey?: string;
   apiBaseUrl?: string;
@@ -30,6 +32,9 @@ interface Settings {
 }
 
 // Define the context shape
+/**
+ * Type definition for the settings context value
+ */
 interface SettingsContextType {
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => void;
@@ -37,9 +42,14 @@ interface SettingsContextType {
 }
 
 // Create the context
+/**
+ * React context for managing application settings across components
+ */
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-// Default settings
+/**
+ * Default application settings with sensible defaults
+ */
 const defaultSettings: Settings = {
   apiKey: '',
   apiBaseUrl: 'http://localhost:8553/v1',
@@ -53,7 +63,11 @@ const defaultSettings: Settings = {
   companyDocumentsEnabled: false
 };
 
-// Hook for easy access to the settings context
+/**
+ * Custom hook to access settings context
+ * @returns Settings context value with current settings and update function
+ * @throws Error if used outside of SettingsProvider
+ */
 export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (!context) {
@@ -62,11 +76,18 @@ export const useSettings = () => {
   return context;
 };
 
-// Provider component
+/**
+ * Props for the SettingsProvider component
+ */
 interface SettingsProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Settings context provider component that manages application settings state
+ * @param props - Component props containing children to wrap
+ * @returns Settings context provider
+ */
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   // Load settings from localStorage or use defaults
   const [settings, setSettings] = useState<Settings>(() => {
@@ -126,4 +147,4 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       {children}
     </SettingsContext.Provider>
   );
-}; 
+};          

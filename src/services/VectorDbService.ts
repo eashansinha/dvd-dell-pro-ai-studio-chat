@@ -26,7 +26,7 @@ import { VectorStore } from '@langchain/core/vectorstores';
 import { Document } from '@langchain/core/documents';
 import { Embeddings } from '@langchain/core/embeddings';
 import { v4 as uuidv4 } from 'uuid';
-import { createOpenAIEmbeddings, formatTextForEmbedding, RxDBVectorStore } from '../services/LangChainIntegration';
+import { createOpenAIEmbeddings, RxDBVectorStore } from '../services/LangChainIntegration';
 
 // LangChain vector store types
 interface MilvusStoreType {
@@ -70,13 +70,6 @@ interface WeaviateStoreType {
   ): VectorStore;
 }
 
-interface ChromaStoreType {
-  new(embeddings: Embeddings, options: {
-    url: string;
-    collectionName: string;
-    [key: string]: any;
-  }): VectorStore;
-}
 
 interface PGVectorStoreType {
   initialize(
@@ -108,11 +101,15 @@ interface PineconeStoreType {
 let MilvusStore: MilvusStoreType | null = null;
 let QdrantVectorStore: QdrantStoreType | null = null;
 let WeaviateStore: WeaviateStoreType | null = null;
-let ChromaStore: ChromaStoreType | null = null;
 let PGVectorStore: PGVectorStoreType | null = null;
 let PineconeStore: PineconeStoreType | null = null;
 
 // Lazy load the vector stores to avoid bundling all at once
+/**
+ * Dynamically import vector store libraries to avoid bundling issues
+ * Only imports libraries when they are actually needed
+ * @throws Error if required vector store libraries cannot be imported
+ */
 async function importVectorStores() {
   // Only import what we need when we need it
   try {
@@ -145,7 +142,6 @@ async function importVectorStores() {
 
     // Chroma integration is disabled due to compatibility issues
     console.warn('Chroma integration is disabled due to compatibility issues');
-    ChromaStore = null;
 
     try {
       // PGVector integration
@@ -179,10 +175,6 @@ declare module '@langchain/core/vectorstores' {
   }
 }
 
-// Fix the type errors in existing vector store code by expanding interface
-interface ExtendedVectorStore extends VectorStore {
-  setFilterTags?: (tags: string[]) => void;
-}
 
 class VectorDbService {
   private connections: VectorDbConnection[] = [];
@@ -196,6 +188,10 @@ class VectorDbService {
 
   /**
    * Initialize the service by loading vector store modules
+   */
+  /**
+   * Initialize the service by loading saved configurations and importing vector stores
+   * @throws Error if vector store libraries cannot be imported
    */
   async initialize(): Promise<void> {
     if (!this.isInitialized) {
@@ -224,6 +220,9 @@ class VectorDbService {
   /**
    * Save vector database configurations to localStorage
    */
+  /**
+   * Save current vector database configurations to localStorage
+   */
   private saveConfigurations(): void {
     const configs = this.connections.map(conn => conn.config);
     localStorage.setItem('vectorDbConfigs', JSON.stringify(configs));
@@ -231,6 +230,10 @@ class VectorDbService {
 
   /**
    * Get all vector database configurations
+   */
+  /**
+   * Get all vector database configurations
+   * @returns Array of all configured vector databases
    */
   getConfigurations(): VectorDbConfig[] {
     return this.connections.map(conn => conn.config);
@@ -343,7 +346,7 @@ class VectorDbService {
           vectorStore = await this.createPineconeStore(config as PineconeConfig, this.embeddings);
           break;
         default:
-          throw new Error(`Unsupported vector store type: ${config.type}`);
+          throw new Error(`Unsupported vector store type: ${(config as any).type}`);
       }
       
       // Store the vector store in the connection for future use
@@ -369,9 +372,7 @@ class VectorDbService {
     // Make sure we've initialized
     await this.initialize();
     
-    // Get settings to check for Nomic model
-    const settings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
-    const embeddingsModel = settings.embeddingsModel || 'nomic-embed-text';
+    // Get settings to check for Nomic model (currently unused)
     
     // Filter connections based on provided filter, or use all enabled connections
     let filteredConnections = this.connections.filter(conn => conn.config.enabled);
@@ -498,9 +499,7 @@ class VectorDbService {
         this.embeddings = createOpenAIEmbeddings();
       }
       
-      // Get settings to check for Nomic model
-      const settings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
-      const embeddingsModel = settings.embeddingsModel || 'nomic-embed-text';
+      // Get settings to check for Nomic model (currently unused)
       
       // Create a temporary vector store to test the connection
       let vectorStore: VectorStore | null = null;
@@ -525,7 +524,7 @@ class VectorDbService {
           vectorStore = await this.createPineconeStore(config as PineconeConfig, this.embeddings);
           break;
         default:
-          throw new Error(`Unsupported vector store type: ${config.type}`);
+          throw new Error(`Unsupported vector store type: ${(config as any).type}`);
       }
       
       // Perform a simple search to test the connection
@@ -548,6 +547,13 @@ class VectorDbService {
 
   // Helper methods to create specific vector stores
   
+  /**
+   * Create Milvus vector store instance
+   * @param config - Milvus configuration
+   * @param embeddings - Embeddings instance to use
+   * @returns Promise resolving to Milvus vector store
+   * @throws Error if Milvus store creation fails
+   */
   private async createMilvusStore(config: MilvusConfig, embeddings: Embeddings): Promise<VectorStore> {
     if (!MilvusStore) {
       throw new Error('Milvus module not loaded');
@@ -563,6 +569,13 @@ class VectorDbService {
     });
   }
   
+  /**
+   * Create Qdrant vector store instance
+   * @param config - Qdrant configuration
+   * @param embeddings - Embeddings instance to use
+   * @returns Promise resolving to Qdrant vector store
+   * @throws Error if Qdrant store creation fails
+   */
   private async createQdrantStore(config: QdrantConfig, embeddings: Embeddings): Promise<VectorStore> {
     if (!QdrantVectorStore) {
       throw new Error('Qdrant module not loaded');
@@ -576,6 +589,13 @@ class VectorDbService {
     });
   }
   
+  /**
+   * Create Weaviate vector store instance
+   * @param config - Weaviate configuration
+   * @param embeddings - Embeddings instance to use
+   * @returns Promise resolving to Weaviate vector store
+   * @throws Error if Weaviate store creation fails
+   */
   private async createWeaviateStore(config: WeaviateConfig, embeddings: Embeddings): Promise<VectorStore> {
     if (!WeaviateStore) {
       throw new Error('Weaviate module not loaded');
@@ -588,7 +608,7 @@ class VectorDbService {
     const client = weaviate.client({
       scheme: config.url.startsWith('https') ? 'https' : 'http',
       host: config.url.replace(/^https?:\/\//, ''),
-      apiKey: config.apiKey ? { value: config.apiKey } : undefined
+      apiKey: config.apiKey ? { value: config.apiKey } as any : undefined
     });
     
     // Create Weaviate store from existing index
@@ -599,11 +619,24 @@ class VectorDbService {
     });
   }
   
-  private async createChromaStore(config: ChromaConfig, embeddings: Embeddings): Promise<VectorStore> {
+  /**
+   * Create Chroma vector store instance (currently disabled)
+   * @param config - Chroma configuration (unused)
+   * @param embeddings - Embeddings instance (unused)
+   * @throws Error indicating Chroma is disabled due to compatibility issues
+   */
+  private async createChromaStore(_config: any, _embeddings: Embeddings): Promise<VectorStore> {
     // Chroma is disabled due to compatibility issues
     throw new Error('Chroma DB is disabled due to compatibility issues. Please use a different vector database.');
   }
   
+  /**
+   * Create PGVector store instance for PostgreSQL with vector extension
+   * @param config - PGVector configuration
+   * @param embeddings - Embeddings instance to use
+   * @returns Promise resolving to PGVector store
+   * @throws Error if PGVector store creation fails
+   */
   private async createPGVectorStore(config: PGVectorConfig, embeddings: Embeddings): Promise<VectorStore> {
     // In browser environments, we need special handling for pg which is not fully browser-compatible
     const isBrowser = typeof window !== 'undefined';
@@ -638,6 +671,13 @@ class VectorDbService {
     }
   }
   
+  /**
+   * Create Pinecone vector store instance
+   * @param config - Pinecone configuration
+   * @param embeddings - Embeddings instance to use
+   * @returns Promise resolving to Pinecone vector store
+   * @throws Error if Pinecone store creation fails
+   */
   private async createPineconeStore(config: PineconeConfig, embeddings: Embeddings): Promise<VectorStore> {
     if (!PineconeStore) {
       throw new Error('Pinecone module not loaded');
@@ -648,8 +688,7 @@ class VectorDbService {
     
     // Create Pinecone client instance
     const pinecone = new Pinecone({
-      apiKey: config.apiKey,
-      environment: config.environment
+      apiKey: config.apiKey
     });
     
     // Get Pinecone index
@@ -775,4 +814,4 @@ class VectorDbService {
 }
 
 // Export a singleton instance
-export const vectorDbService = new VectorDbService(); 
+export const vectorDbService = new VectorDbService();          

@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * ThinkingSection component displays AI thinking process with expandable content
+ * Shows the reasoning steps and thought process behind AI responses
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, IconButton } from '@mui/material';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -20,12 +25,20 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ReactMarkdown from 'react-markdown';
 import { useAppSelector } from '../../store/store';
 
+/**
+ * Props for the ThinkingSection component
+ */
 interface ThinkingSectionProps {
   content: string;
-  messageId?: string; // Optional, for saved messages
-  isStreaming?: boolean; // Flag for active thinking
+  messageId?: string;
+  isStreaming?: boolean;
 }
 
+/**
+ * Component that displays AI thinking process in an expandable section
+ * @param props - Component props including content, messageId, and streaming state
+ * @returns JSX element containing the thinking process display
+ */
 export const ThinkingSection: React.FC<ThinkingSectionProps> = ({ 
   content, 
   messageId,
@@ -46,6 +59,9 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
     }
   }, [messageId, displayThinking]);
 
+  /**
+   * Toggle the expanded state of the thinking section
+   */
   const handleToggle = () => {
     setExpanded(!expanded);
   };

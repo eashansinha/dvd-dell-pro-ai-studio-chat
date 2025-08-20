@@ -13,7 +13,8 @@
  */
 
 /**
- * Service to manage AbortControllers outside of Redux state
+ * Service for managing abort controllers to cancel ongoing requests
+ * Provides centralized management of request cancellation across the application
  * This avoids the non-serializable warning from Redux
  */
 class AbortControllerService {
@@ -58,5 +59,7 @@ class AbortControllerService {
   }
 }
 
-// Export singleton instance
-export const abortControllerService = new AbortControllerService(); 
+/**
+ * Singleton instance of the abort controller service
+ */
+export const abortControllerService = new AbortControllerService();     

@@ -12,9 +12,18 @@
  * limitations under the License.
  */
 
+/**
+ * RxDB schemas for database collections
+ * Defines the structure and validation rules for messages, sessions, documents, and document chunks
+ */
+
 import type { RxJsonSchema } from 'rxdb';
 import type { MessageDocType, SessionDocType, DocumentDocType, DocumentChunkDocType } from './types';
 
+/**
+ * Schema for message documents in the database
+ * Defines structure for chat messages with optional embeddings and metadata
+ */
 export const messageSchema: RxJsonSchema<MessageDocType> = {
   title: 'message schema',
   description: 'Stores individual messages with optional embeddings and thinking content.',
@@ -102,6 +111,10 @@ export const messageSchema: RxJsonSchema<MessageDocType> = {
   required: ['id', 'text', 'sender'],
 };
 
+/**
+ * Schema for session documents in the database
+ * Defines structure for chat sessions containing message references and metadata
+ */
 export const sessionSchema: RxJsonSchema<SessionDocType> = {
   title: 'chat session schema',
   description: 'Stores references to messages by ID.',
@@ -138,6 +151,10 @@ export const sessionSchema: RxJsonSchema<SessionDocType> = {
   required: ['sessionId', 'createdAt', 'lastUpdated', 'title', 'messages'],
 };
 
+/**
+ * Schema for document records in the database
+ * Defines structure for uploaded documents with content and metadata
+ */
 export const documentSchema: RxJsonSchema<DocumentDocType> = {
   title: 'document schema',
   description: 'Stores documents with metadata',
@@ -183,6 +200,10 @@ export const documentSchema: RxJsonSchema<DocumentDocType> = {
   required: ['id', 'content', 'metadata'],
 };
 
+/**
+ * Schema for document chunk records in the database
+ * Defines structure for document chunks with vector embeddings for RAG functionality
+ */
 export const documentChunkSchema: RxJsonSchema<DocumentChunkDocType> = {
   title: 'document chunk schema',
   description: 'Stores document chunks with vector embeddings',

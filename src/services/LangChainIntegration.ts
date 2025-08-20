@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * LangChain integration for RxDB vector store operations
+ * Provides custom vector store implementation with document filtering and embedding support
+ */
+
 import { VectorStore } from '@langchain/core/vectorstores';
 import { Document } from '@langchain/core/documents';
 import { Embeddings } from '@langchain/core/embeddings';
@@ -21,8 +26,9 @@ import { createEmbedding, calculateCosineSimilarity } from '../db/vectorStore';
 import { v4 as uuidv4 } from 'uuid';
 import { OpenAIEmbeddings } from "@langchain/openai";
 
-// Add this import to access the special interface for RxDBVectorStore
-// and augment the VectorStore interface to include setFilterTags method
+/**
+ * Module augmentation to extend VectorStore interface with filtering capabilities
+ */
 declare module '@langchain/core/vectorstores' {
   interface VectorStore {
     setFilterTags?: (tags: string[]) => void;
@@ -30,14 +36,20 @@ declare module '@langchain/core/vectorstores' {
   }
 }
 
-// Fix the type errors in existing vector store code by expanding interface
+/**
+ * Extended vector store interface with filtering methods
+ */
 interface ExtendedVectorStore extends VectorStore {
   setFilterTags(tags: string[]): void;
   setDocumentIds(documentIds: string[]): void;
 }
 
 /**
- * Utility function to add prefix for Nomic models if needed
+ * Utility function to add appropriate prefixes for Nomic embedding models
+ * @param text - The text to format for embedding
+ * @param type - The type of embedding operation
+ * @param modelName - Optional model name to determine if prefixing is needed
+ * @returns Formatted text with appropriate prefix for Nomic models
  */
 export function formatTextForEmbedding(text: string, type: 'query' | 'document' | 'clustering' | 'classification', modelName?: string): string {
   // If model name contains "nomic", add appropriate prefix
@@ -377,4 +389,4 @@ export function createOpenAIEmbeddings(): OpenAIEmbeddings {
   };
   
   return embeddings;
-} 
+}  

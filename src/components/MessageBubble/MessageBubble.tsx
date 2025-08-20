@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Message bubble component for displaying chat messages with rich features
+ * Supports user and assistant messages, thinking content, metrics, and document references
+ */
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Box, Avatar, Typography, Chip, Tooltip, Divider, IconButton, CircularProgress } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -37,12 +42,20 @@ import { getTextToSpeech, summarizeText } from '../../client/openaiClient';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { regenerateMessage } from '../../store/store';
 
+/**
+ * Props for the MessageBubble component
+ */
 interface MessageBubbleProps {
   message: MessageDocType;
-  thinkingContent?: string;  // For live thinking content
-  isThinking?: boolean;      // Flag for active thinking
+  thinkingContent?: string;
+  isThinking?: boolean;
 }
 
+/**
+ * Message bubble component displaying chat messages with metrics, references, and interactive features
+ * @param props - Component props including message data and thinking state
+ * @returns JSX element containing the formatted message bubble
+ */
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   thinkingContent,
@@ -134,7 +147,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   }, [message.id, message.documentReferences]);
 
-  // Handle audio playback
+  /**
+   * Handle text-to-speech audio playback for message content
+   * Toggles between play and stop states
+   */
   const handleSpeechClick = async () => {
     if (isPlaying && audioRef.current) {
       // Stop playing if already playing
@@ -168,7 +184,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  // Handle summarization and playback
+  /**
+   * Handle message summarization and text-to-speech playback
+   * Generates summary if not cached, then plays audio
+   */
   const handleSummarizeClick = async () => {
     if (isPlaying && audioRef.current) {
       // Stop playing if already playing

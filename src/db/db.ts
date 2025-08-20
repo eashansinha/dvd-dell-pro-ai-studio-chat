@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Database initialization and management module for RxDB
+ * Handles database creation, plugin initialization, and collection setup
+ */
+
 import {
     createRxDatabase,
     addRxPlugin as addRxDBPlugin
@@ -26,10 +31,15 @@ import { ChatDB } from './types';
 import { messageSchema, sessionSchema, documentSchema, documentChunkSchema } from './schemas';
 import { store } from '../store/store';
 
-// Somewhere near the top of the file, add a debug flag
+/**
+ * Debug flag for database operations logging
+ */
 const DEBUG_DB = true;
 
-// Add needed plugins
+/**
+ * Initialize required RxDB plugins for database functionality
+ * Adds plugins for development mode, query building, updates, and migrations
+ */
 const initializePlugins = () => {
   if (DEBUG_DB) console.log('=== DB: Initializing plugins...');
   addRxDBPlugin(RxDBDevModePlugin);
@@ -42,7 +52,10 @@ const initializePlugins = () => {
 // Initialize plugins
 initializePlugins();
 
-// Define migrations
+/**
+ * Database migration strategies for schema updates
+ * Handles backward compatibility when schema changes occur
+ */
 const migrations = {
     messages: {
         1: function(oldDoc: any) {

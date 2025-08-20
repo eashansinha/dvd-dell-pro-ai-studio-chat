@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Document upload and management component providing file upload, search, and library functionality
+ * Supports multiple file formats with progress tracking and semantic search capabilities
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -40,20 +45,30 @@ import { DocumentDocType, DocumentChunkDocType } from '../../db/types';
 import { getDB } from '../../db/db';
 import './DocumentUpload.css';
 
-// Define interfaces for different document types in search results
+/**
+ * Interface for document search results with similarity scoring
+ */
 interface DocumentSearchResult {
   document: DocumentDocType;
   similarity: number;
 }
 
+/**
+ * Interface for document chunk search results with similarity scoring
+ */
 interface ChunkSearchResult {
   document: DocumentChunkDocType;
   similarity: number;
 }
 
-// Use a type that can be either document or chunk search results
+/**
+ * Union type for search results that can be either document or chunk results
+ */
 type SearchResult = DocumentSearchResult | ChunkSearchResult;
 
+/**
+ * Interface for tracking embedding generation progress during document upload
+ */
 interface EmbeddingProgress {
   processedChunks: number;
   totalChunks: number;
@@ -65,6 +80,10 @@ interface EmbeddingProgress {
   totalFiles?: number;
 }
 
+/**
+ * Document upload and management component
+ * @returns JSX element containing the document upload interface
+ */
 export const DocumentUpload: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -81,7 +100,11 @@ export const DocumentUpload: React.FC = () => {
   // New state for tracking embedding progress
   const [embeddingProgress, setEmbeddingProgress] = useState<EmbeddingProgress | null>(null);
   
-  // Format time helper function
+  /**
+   * Format time duration from milliseconds to human-readable string
+   * @param milliseconds - Time duration in milliseconds
+   * @returns Formatted time string (e.g., "2m 30s")
+   */
   const formatTime = (milliseconds: number): string => {
     if (!milliseconds || milliseconds <= 0) return '0s';
     
@@ -93,7 +116,11 @@ export const DocumentUpload: React.FC = () => {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  // Function to determine if a search result is a document or a chunk
+  /**
+   * Type guard to determine if a search result is a document or chunk result
+   * @param result - Search result to check
+   * @returns True if result is a document result, false if chunk result
+   */
   const isDocumentResult = (result: SearchResult): result is DocumentSearchResult => {
     return 'uploadDate' in result.document.metadata;
   };
@@ -103,6 +130,10 @@ export const DocumentUpload: React.FC = () => {
     loadDocuments();
   }, []);
 
+  /**
+   * Load all documents from the database and update component state
+   * Also loads all available tags for the tag system
+   */
   const loadDocuments = async () => {
     setLoading(true);
     try {
@@ -533,4 +564,4 @@ export const DocumentUpload: React.FC = () => {
       </Dialog>
     </Box>
   );
-}; 
+};  

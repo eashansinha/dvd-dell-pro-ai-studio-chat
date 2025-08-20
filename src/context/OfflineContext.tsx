@@ -12,24 +12,47 @@
  * limitations under the License.
  */
 
+/**
+ * Offline context provider for managing network connectivity and service worker state
+ * Provides real-time network status and service worker readiness information
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+/**
+ * Type definition for offline context state
+ */
 interface OfflineContextType {
   isOnline: boolean;
   isServiceWorkerReady: boolean;
 }
 
+/**
+ * Offline context instance with default values
+ */
 const OfflineContext = createContext<OfflineContextType>({
   isOnline: navigator.onLine,
   isServiceWorkerReady: false,
 });
 
+/**
+ * Custom hook to access offline context
+ * @returns Offline context value with network and service worker status
+ */
 export const useOffline = () => useContext(OfflineContext);
 
+/**
+ * Props for the OfflineProvider component
+ */
 interface OfflineProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Offline provider component that tracks network connectivity and service worker status
+ * @param props - Component props containing child components
+ * @returns JSX element providing offline context to children
+ */
 export const OfflineProvider: React.FC<OfflineProviderProps> = ({ children }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isServiceWorkerReady, setIsServiceWorkerReady] = useState(false);
@@ -59,4 +82,4 @@ export const OfflineProvider: React.FC<OfflineProviderProps> = ({ children }) =>
       {children}
     </OfflineContext.Provider>
   );
-}; 
+};  

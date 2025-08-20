@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Dialog component for configuring the downloads folder path
+ * Provides platform-specific instructions for finding the downloads directory
+ */
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -36,11 +41,17 @@ import LinuxIcon from '@mui/icons-material/Terminal';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { getSettings, saveSettings } from '../../utils/settings';
 
+/**
+ * Props for the DownloadsPathDialog component
+ */
 interface DownloadsPathDialogProps {
   open: boolean;
   onClose: (path?: string) => void;
 }
 
+/**
+ * Platform-specific instructions for finding downloads path
+ */
 interface PlatformInstructions {
   icon: React.ReactNode;
   name: string;
@@ -48,6 +59,11 @@ interface PlatformInstructions {
   steps: string[];
 }
 
+/**
+ * Downloads path configuration dialog with platform-specific instructions
+ * @param props - Component props including open state and close handler
+ * @returns JSX element containing the downloads path configuration dialog
+ */
 export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, onClose }) => {
   const [path, setPath] = useState('');
   const [error, setError] = useState('');
@@ -91,6 +107,10 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
     }
   ];
 
+  /**
+   * Copy example path to clipboard with username replacement
+   * @param example - The example path template to copy
+   */
   const handleCopyExample = (example: string) => {
     // Replace YourUsername with actual username if possible
     const username = (window as any).username || 'YourUsername';
@@ -98,6 +118,10 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
     navigator.clipboard.writeText(actualPath);
   };
 
+  /**
+   * Save the downloads path after validation
+   * Validates path format and saves to application settings
+   */
   const handleSave = () => {
     if (!path.trim()) {
       setError('Please enter a path');
@@ -207,4 +231,4 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
       </DialogActions>
     </Dialog>
   );
-}; 
+};  

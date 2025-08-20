@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Database schema types and interfaces for RxDB collections
+ * Defines the structure for sessions, messages, documents, and document chunks
+ */
+
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import {
     RxDocument,
@@ -19,10 +24,10 @@ import {
     RxDatabase,
   } from 'rxdb';
   
-  /**
-   * Interface for message metrics
-   */
-  export interface MessageMetrics {
+/**
+ * Metrics for message performance tracking including timing and token information
+ */
+export interface MessageMetrics {
     processingTimeMs?: number;
     tokensGenerated?: number;
     wordsGenerated?: number;
@@ -31,10 +36,10 @@ import {
     endTime?: number;
   }
   
-  /**
-   * Interface representing a single chat Message.
-   */
-  export interface DocumentReference {
+/**
+ * Reference to a document used in RAG (Retrieval-Augmented Generation) responses
+ */
+export interface DocumentReference {
     documentId: string;     // ID of the document
     documentName: string;   // Name for display
     chunkId: string;        // ID to look up the chunk in the document-chunk db
@@ -44,7 +49,10 @@ import {
     content?: string;        // Document content
   }
   
-  export interface MessageDocType {
+/**
+ * Type definition for chat message documents stored in the database
+ */
+export interface MessageDocType {
     id: string;
     text: string;
     sender: 'user' | 'assistant';
@@ -52,8 +60,9 @@ import {
     thinkingContent?: string;
     embedding?: number[];
     metrics?: MessageMetrics;
-    documentReferences?: DocumentReference[]; // References for RAG
-    model?: string; // Model used to generate this message (for assistant messages)
+    documentReferences?: DocumentReference[];
+    model?: string;
+    conversationId?: string;
   }
   
   /**
@@ -61,17 +70,17 @@ import {
    */
   export type MessageDocument = RxDocument<MessageDocType>;
   
-  /**
-   * Optional custom methods for the messages collection.
-   */
-  export interface MessageCollectionMethods {
+/**
+ * Collection methods for message database operations
+ */
+export interface MessageCollectionMethods {
     // e.g., getVector(): number[];
   }
   
-  /**
-   * Interface representing a chat session doc.
-   */
-  export interface SessionDocType {
+/**
+ * Type definition for chat session documents stored in the database
+ */
+export interface SessionDocType {
     sessionId: string;
     createdAt: number;
     lastUpdated: number;
@@ -88,14 +97,17 @@ import {
   /**
    * Optional custom methods for the sessions collection.
    */
-  export interface SessionCollectionMethods {
+/**
+ * Collection methods for session database operations
+ */
+export interface SessionCollectionMethods {
     // e.g., addMessageId(msgId: string): void;
   }
   
-  /**
-   * Interface for document metadata
-   */
-  export interface DocumentMetadata {
+/**
+ * Metadata for uploaded documents including file information and processing details
+ */
+export interface DocumentMetadata {
     filename: string;
     mimetype: string;
     size: number;
@@ -104,10 +116,10 @@ import {
     chunkCount: number;
   }
   
-  /**
-   * Interface for a document
-   */
-  export interface DocumentDocType {
+/**
+ * Type definition for uploaded document records
+ */
+export interface DocumentDocType {
     id: string;
     content: string;
     metadata: DocumentMetadata;
@@ -121,14 +133,17 @@ import {
   /**
    * Interface for document methods
    */
-  export interface DocumentCollectionMethods {
+/**
+ * Collection methods for document database operations
+ */
+export interface DocumentCollectionMethods {
     // Future methods
   }
   
-  /**
-   * Interface for document chunk metadata
-   */
-  export interface DocumentChunkMetadata {
+/**
+ * Metadata for document chunks including source information and positioning
+ */
+export interface DocumentChunkMetadata {
     documentName: string;
     documentType: string;
     tags: string[];
@@ -136,10 +151,10 @@ import {
     section?: string;
   }
   
-  /**
-   * Interface for a document chunk with vector embedding
-   */
-  export interface DocumentChunkDocType {
+/**
+ * Type definition for document chunk records with embeddings
+ */
+export interface DocumentChunkDocType {
     id: string;
     documentId: string;
     content: string;
@@ -156,14 +171,17 @@ import {
   /**
    * Interface for document chunk methods
    */
-  export interface DocumentChunkCollectionMethods {
+/**
+ * Collection methods for document chunk database operations
+ */
+export interface DocumentChunkCollectionMethods {
     // Future methods
   }
   
-  /**
-   * Our database collections.
-   */
-  export interface ChatDatabaseCollections {
+/**
+ * Main database collections interface defining all RxDB collections
+ */
+export interface ChatDatabaseCollections {
     messages: RxCollection<MessageDocType, MessageCollectionMethods>;
     sessions: RxCollection<SessionDocType, SessionCollectionMethods>;
     documents: RxCollection<DocumentDocType, DocumentCollectionMethods>;

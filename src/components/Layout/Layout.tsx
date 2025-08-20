@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Main layout component organizing the application structure
+ * Provides the overall container with sidebar, chat area, and offline indicator
+ */
+
 import React from 'react';
 import { Box } from '@mui/material';
 import { Sidebar } from '../Sidebar/Sidebar';
@@ -19,10 +24,18 @@ import { ChatContainer } from '../ChatContainer/ChatContainer';
 import { OfflineIndicator } from '../OfflineIndicator/OfflineIndicator';
 import './Layout.css';
 
+/**
+ * Props for the Layout component
+ */
 interface LayoutProps {
   onOpenSettings: () => void;
 }
 
+/**
+ * Main layout component that structures the application UI
+ * @param props - Component props including settings handler
+ * @returns JSX element containing the complete application layout
+ */
 export const Layout: React.FC<LayoutProps> = ({ onOpenSettings }) => {
   return (
     <Box className="layout-container">

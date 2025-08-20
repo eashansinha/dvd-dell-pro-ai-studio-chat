@@ -19,14 +19,24 @@ import './index.css'
 import ChatApp from './ChatApp.tsx'
 import { registerSW } from 'virtual:pwa-register'
 
-// Register service worker
+/**
+ * Register service worker for PWA functionality with update and offline capabilities
+ */
 const updateSW = registerSW({
+  /**
+   * Handle service worker update availability
+   * Prompts user to refresh when new content is available
+   */
   onNeedRefresh() {
     // Show a prompt to the user asking them to refresh
     if (confirm('New content available. Reload?')) {
       updateSW(true)
     }
   },
+  /**
+   * Handle offline readiness notification
+   * Called when the app is ready to work offline
+   */
   onOfflineReady() {
     console.log('App ready to work offline')
   },

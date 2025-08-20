@@ -12,11 +12,19 @@
  * limitations under the License.
  */
 
+/**
+ * Model selector component for choosing AI models in the chat interface
+ * Provides dropdown selection with model tags, parameter sizes, and default indicators
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { Select, MenuItem, FormControl, InputLabel, Box, Chip, Typography } from '@mui/material';
 import { useAppSelector, useAppDispatch, setCurrentModel } from '../../store/store';
 
+/**
+ * Interface defining the structure of a model object
+ */
 interface Model {
   id: string;
   name: string;
@@ -25,13 +33,20 @@ interface Model {
   tag?: string;
 }
 
+/**
+ * Model selector component with dropdown interface for AI model selection
+ * @returns JSX element containing the model selection dropdown
+ */
 export const ModelSelector: React.FC = () => {
     const dispatch = useAppDispatch();
     const selectedModel = useAppSelector(state => state.chat.currentModel);
     const [availableModels, setAvailableModels] = useState<Model[]>([]);
     
     useEffect(() => {
-        // Load models from settings
+        /**
+         * Fetch and load available models from localStorage settings
+         * @param event - Optional custom event triggering the fetch
+         */
         const fetchModels = (event?: CustomEvent) => {
             const savedSettings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
             const enabledModels = savedSettings.enabledModels || {};
@@ -79,7 +94,10 @@ export const ModelSelector: React.FC = () => {
         
         fetchModels();
         
-        // Listen for settings changes
+        /**
+         * Handle settings update events by refetching models
+         * @param event - Settings update event
+         */
         const handleSettingsUpdate = (event: Event) => {
             fetchModels(event as CustomEvent);
         };
@@ -88,7 +106,11 @@ export const ModelSelector: React.FC = () => {
         return () => window.removeEventListener('settings-updated', handleSettingsUpdate);
     }, [dispatch, selectedModel]);
     
-    // Convert model ID to display name
+    /**
+     * Convert model ID to human-readable display name
+     * @param modelId - The full model identifier
+     * @returns Formatted display name for the model
+     */
     const getModelDisplayName = (modelId: string): string => {
         // First remove compute-type prefix if present
         let displayName = modelId;
@@ -111,7 +133,11 @@ export const ModelSelector: React.FC = () => {
         return displayName;
     };
     
-    // Extract parameter size from model ID if present
+    /**
+     * Extract parameter size information from model ID
+     * @param modelId - The full model identifier
+     * @returns Parameter size string or null if not present
+     */
     const getParameterSize = (modelId: string): string | null => {
         const parts = modelId.split(':');
         if (parts.length >= 2) {
@@ -120,6 +146,10 @@ export const ModelSelector: React.FC = () => {
         return null;
     };
 
+    /**
+     * Handle model selection change event
+     * @param event - Change event from the select dropdown
+     */
     const handleModelChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         const modelId = event.target.value as string;
         dispatch(setCurrentModel(modelId));
@@ -128,7 +158,11 @@ export const ModelSelector: React.FC = () => {
     // Only show enabled models
     const enabledModels = availableModels.filter(model => model.enabled);
 
-    // Helper function to get tag color based on compute location
+    /**
+     * Get appropriate color for model tags based on compute location
+     * @param tag - The tag string indicating compute type
+     * @returns Material-UI color name for the tag
+     */
     const getTagColor = (tag: string): string => {
         switch(tag) {
             case 'public-cloud':

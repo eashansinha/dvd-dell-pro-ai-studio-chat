@@ -17,7 +17,6 @@ import { getDB } from '../db/db';
 import { callOpenAICompletion } from '../client/openaiClient';
 import { MessageDocType, MessageMetrics, DocumentReference } from '../db/types';
 import { vectorizeAndStoreMessage } from '../db/vectorStore';
-import { DocumentManager } from '../services/DocumentManager';
 import { createOpenAIEmbeddings, RxDBVectorStore } from '../services/LangChainIntegration';
 import { generateChatTitle } from '../services/titleGenerator';
 import { store } from './store';
@@ -55,7 +54,11 @@ type KnownAction =
   | ReceiveTokenAction
   | RegenerateMessageAction;
 
-// Type predicate to narrow action type
+/**
+ * Type predicate to narrow action type for known middleware actions
+ * @param action - The action to check
+ * @returns True if the action is a known middleware action
+ */
 function isKnownAction(action: any): action is KnownAction {
   return (
     action && 
@@ -71,9 +74,17 @@ function isKnownAction(action: any): action is KnownAction {
   );
 }
 
-// Global map to track processing metrics
+/**
+ * Global map to track processing metrics for messages
+ */
 const processingMetrics: Record<string, MessageMetrics> = {};
 
+/**
+ * Redux middleware for handling database operations and state persistence
+ * Automatically syncs certain actions with the RxDB database
+ * @param store - Redux store instance
+ * @returns Middleware function for database operations
+ */
 export const dbMiddleware: Middleware = store => next => action => {
   // First, let the action go through to complete the state update
   const result = next(action);
@@ -107,7 +118,7 @@ export const dbMiddleware: Middleware = store => next => action => {
           const userMessage = state.messages[state.messages.length - 1];
           if (userMessage) {
             try {
-              await vectorizeAndStoreMessage(userMessage, false);
+              await vectorizeAndStoreMessage(userMessage);
             } catch (error) {
               console.error('Error vectorizing user message:', error);
             }
@@ -208,7 +219,11 @@ ${action.payload}
   return result;
 };
 
-// Handle end of stream (saving assistant message)
+/**
+ * Handle end of stream event by saving the assistant message to database
+ * @param store - Redux store instance
+ * @param documentReferences - Optional document references for RAG responses
+ */
 async function handleEndOfStream(store: any, documentReferences?: DocumentReference[]) {
   const state = store.getState().chat;
   
@@ -240,7 +255,7 @@ async function handleEndOfStream(store: any, documentReferences?: DocumentRefere
           
           // If processing time is unreasonably short, set a minimum value
           if (processingMetrics[assistantMsg.id]?.processingTimeMs && 
-              processingMetrics[assistantMsg.id]?.processingTimeMs < 100) {
+              (processingMetrics[assistantMsg.id]?.processingTimeMs || 0) < 100) {
             // Use non-null assertion only after checking assistantMsg.id exists in the map
             const metrics = processingMetrics[assistantMsg.id];
             if (metrics) {
@@ -291,7 +306,7 @@ async function handleEndOfStream(store: any, documentReferences?: DocumentRefere
       // Only generate title if we don't already have a custom one
       if (session.title === 'New Chat') {
         // Generate a title based on the first exchange
-        const newTitle = await generateChatTitle(messages);
+        const newTitle = await generateChatTitle(messages as MessageDocType[]);
         
         // Update the session title
         await session.update({
@@ -304,7 +319,10 @@ async function handleEndOfStream(store: any, documentReferences?: DocumentRefere
   }
 }
 
-// Handle deleting a session and its messages
+/**
+ * Handle deleting a session and all its associated messages from database
+ * @param sessionId - The ID of the session to delete
+ */
 async function handleDeleteSession(sessionId: string) {
   try {
     const db = await getDB();
@@ -337,7 +355,12 @@ async function handleDeleteSession(sessionId: string) {
   }
 }
 
-// Save assistant message
+/**
+ * Save assistant message to database with metrics and document references
+ * @param assistantMsg - The assistant message to save
+ * @param currentSessionId - The current session ID
+ * @param documentReferences - Optional document references for RAG responses
+ */
 async function saveAssistantMessage(assistantMsg: MessageDocType, currentSessionId: string | null, documentReferences?: DocumentReference[]) {
   try {
     // Get database instance
@@ -406,7 +429,7 @@ async function saveAssistantMessage(assistantMsg: MessageDocType, currentSession
         
         // Also generate and save vector embedding for semantic search
         try {
-          await vectorizeAndStoreMessage(messageToSave, false);
+          await vectorizeAndStoreMessage(messageToSave);
         } catch (error) {
           console.error('Error creating vector embedding:', error);
         }
@@ -535,9 +558,14 @@ async function saveAssistantMessage(assistantMsg: MessageDocType, currentSession
   }
 }
 
-// Generate a title for the chat based on content
-async function scheduleTitleSummarization(sessionId: string | null, userMessage: string) {
-  if (!sessionId) return;
+/**
+ * Generate a title for the chat based on content (currently unused)
+ * @param sessionId - The session ID to generate title for
+ * @param userMessage - The user message to base the title on
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function scheduleTitleSummarization(_sessionId: string | null, _userMessage: string) {
+  if (!_sessionId) return;
   
   try {
     // Wait to allow a bit of time for initial processing
@@ -547,15 +575,15 @@ async function scheduleTitleSummarization(sessionId: string | null, userMessage:
         
         // Get the full user message (which may include context)
         const session = await db.sessions.findOne({
-          selector: { sessionId }
+          selector: { sessionId: _sessionId }
         }).exec();
         
         if (!session) return;
         
         // Extract the original question from context-enhanced message if needed
-        let titleSource = userMessage;
-        if (userMessage.includes('Based on this context, please answer my question:')) {
-          titleSource = userMessage.split('Based on this context, please answer my question:')[1].trim();
+        let titleSource = _userMessage;
+        if (_userMessage.includes('Based on this context, please answer my question:')) {
+          titleSource = _userMessage.split('Based on this context, please answer my question:')[1].trim();
         }
         
         // Create a better prompt for summarization
@@ -611,6 +639,10 @@ async function scheduleTitleSummarization(sessionId: string | null, userMessage:
 }
 
 // Handle regeneration of a message
+/**
+ * Handle message regeneration by re-sending the last user message
+ * @param lastUserMessageText - The user message to regenerate response for
+ */
 async function handleRegeneration(lastUserMessageText: string) {
   try {
     // Re-send the message to the OpenAI API using the current model

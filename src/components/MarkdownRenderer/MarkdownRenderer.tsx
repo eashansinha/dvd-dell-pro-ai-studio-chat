@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Markdown renderer component with syntax highlighting and VS Code integration
+ * Provides rich markdown rendering with code blocks, tables, and interactive features
+ */
+
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -41,20 +46,34 @@ import VSCodeIconSvg from '../../assets/vscode.svg';
 import { getSettings } from '../../utils/settings';
 import { DownloadsPathDialog } from './DownloadsPathDialog';
 
+/**
+ * Props for the MarkdownRenderer component
+ */
 interface MarkdownRendererProps {
   content: string;
 }
 
+/**
+ * Props for the CodeBlock component
+ */
 interface CodeBlockProps {
   language: string;
   children: string;
 }
 
+/**
+ * Interface for snackbar notification messages
+ */
 interface SnackbarMessage {
   message: string;
   severity: 'success' | 'info' | 'warning' | 'error';
 }
 
+/**
+ * Code block component with syntax highlighting and VS Code integration
+ * @param props - Component props including language and code content
+ * @returns JSX element containing the styled code block with controls
+ */
 const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
   const [copied, setCopied] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarMessage | null>(null);
@@ -62,14 +81,25 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
+  /**
+   * Display a snackbar notification message
+   * @param message - The message to display
+   * @param severity - The severity level of the message
+   */
   const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error' = 'info') => {
     setSnackbar({ message, severity });
   };
 
+  /**
+   * Handle closing the snackbar notification
+   */
   const handleSnackbarClose = () => {
     setSnackbar(null);
   };
 
+  /**
+   * Copy code content to clipboard
+   */
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(children);
@@ -448,4 +478,4 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
       {content}
     </ReactMarkdown>
   );
-}; 
+};  

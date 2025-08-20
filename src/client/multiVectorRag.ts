@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Multi-vector RAG client for retrieving documents from multiple vector stores
+ * Supports both local RxDB vector store and remote backend API sources
+ */
+
 import { Document } from '@langchain/core/documents';
 import { DocumentReference } from '../db/types';
 import { vectorDbService } from '../services/VectorDbService';
@@ -28,6 +33,11 @@ const API_BASE_URL = 'http://localhost:8000';
 export class MultiVectorRAG {
   /**
    * Get relevant documents from multiple vector stores based on a query
+   * Supports both local RxDB vector store and remote backend API sources
+   * @param query - The search query text
+   * @param sessionId - Session ID to get document tags from
+   * @param maxDocuments - Maximum number of documents to return (default: 5)
+   * @returns Promise resolving to array of relevant documents
    */
   static async getRelevantDocuments(
     query: string,
@@ -214,7 +224,12 @@ export class MultiVectorRAG {
   }
   
   /**
-   * Get documents from the backend API
+   * Get documents from the backend API using search filters
+   * @param query - The search query text
+   * @param k - Number of documents to retrieve
+   * @param filters - Search filters including backend IDs, collection IDs, and tags
+   * @returns Promise resolving to array of documents from backend API
+   * @throws Error if backend API request fails
    */
   public static async getDocumentsFromBackend(
     query: string,
@@ -308,6 +323,11 @@ export class MultiVectorRAG {
   /**
    * Test method for verification of the API search implementation
    * This can be run from browser environment to ensure proper functionality
+   * @param query - Test query string (default: 'test query')
+   * @param backendIds - Array of backend IDs to test with
+   * @param collectionIds - Array of collection IDs to test with
+   * @param tags - Array of tags to test with
+   * @returns Promise resolving to array of test documents
    */
   public static async testBackendSearch(
     query: string = 'test query',
@@ -345,6 +365,8 @@ export class MultiVectorRAG {
   
   /**
    * Create document references for UI display from retrieved documents
+   * @param docs - Array of documents to convert to references
+   * @returns Array of document references for UI display
    */
   static createDocumentReferences(docs: Document[]): DocumentReference[] {
     return docs.map(doc => {
@@ -362,7 +384,9 @@ export class MultiVectorRAG {
   }
 
   /**
-   * Format documents for inclusion in the prompt
+   * Format documents for inclusion in the prompt with proper headers and metadata
+   * @param docs - Array of documents to format
+   * @returns Formatted string containing all document content with headers
    */
   static formatDocumentsForPrompt(docs: Document[]): string {
     return docs.map((doc, index) => {
@@ -427,4 +451,4 @@ export class MultiVectorRAG {
     
     return { role: 'system', content: normalizedMessage };
   }
-} 
+}  

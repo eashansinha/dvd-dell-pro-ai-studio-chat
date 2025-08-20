@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Chat history item component for displaying individual chat sessions in the sidebar
+ * Provides session selection, deletion, and visual feedback for active sessions
+ */
+
 import React from 'react';
 import { ListItem, ListItemButton, ListItemText, IconButton, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -19,12 +24,20 @@ import { useAppDispatch, loadSession } from '../../store/store';
 import { getDB } from '../../db/db';
 import type { SessionDocType, MessageDocType } from '../../db/types';
 
+/**
+ * Props for the ChatHistoryItem component
+ */
 interface ChatHistoryItemProps {
   session: SessionDocType;
   isActive: boolean;
   onDelete: (sessionId: string) => void;
 }
 
+/**
+ * Individual chat history item component with session management capabilities
+ * @param props - Component props including session data, active state, and delete handler
+ * @returns JSX element representing a single chat session in the history list
+ */
 export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
   session,
   isActive,
@@ -32,6 +45,10 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
 }) => {
   const dispatch = useAppDispatch();
 
+  /**
+   * Handle session selection by loading messages and updating Redux state
+   * Fetches all messages for the selected session from the database
+   */
   const handleSelectSession = async () => {
     const db = await getDB();
     // Fetch all messages for this session
@@ -51,6 +68,10 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
     }));
   };
 
+  /**
+   * Handle session deletion with event propagation prevention
+   * @param e - Mouse event from the delete button click
+   */
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(session.sessionId);

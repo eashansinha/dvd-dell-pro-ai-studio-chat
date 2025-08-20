@@ -12,9 +12,17 @@
  * limitations under the License.
  */
 
+/**
+ * Settings utilities for managing application configuration
+ * Handles loading, saving, and default settings for the chat application
+ */
+
 import { AppSettings } from '../components/Settings/Settings';
 
-// Default settings that should be used when localStorage is empty
+/**
+ * Default settings that should be used when localStorage is empty
+ * Provides fallback configuration for first-time users
+ */
 export const DEFAULT_SETTINGS: AppSettings = {
   apiBaseUrl: 'http://localhost:8553/v1/openai',
   backendApiUrl: 'http://localhost:8000',
@@ -31,8 +39,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 /**
- * Get settings from localStorage with defaults
+ * Get settings from localStorage with defaults fallback
  * This ensures we always have valid settings even on first load
+ * @returns Complete AppSettings object with all required fields
  */
 export function getSettings(): AppSettings {
   try {
@@ -51,7 +60,8 @@ export function getSettings(): AppSettings {
 }
 
 /**
- * Save settings to localStorage
+ * Save settings to localStorage with error handling
+ * @param settings - The settings object to persist
  */
 export function saveSettings(settings: AppSettings): void {
   try {
@@ -59,4 +69,4 @@ export function saveSettings(settings: AppSettings): void {
   } catch (error) {
     console.error('Failed to save settings to localStorage:', error);
   }
-} 
+}  

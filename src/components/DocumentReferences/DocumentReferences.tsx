@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Document references component for displaying RAG (Retrieval-Augmented Generation) sources
+ * Shows document chunks used to generate AI responses with similarity scores and content
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -30,6 +35,9 @@ import ArticleIcon from '@mui/icons-material/Article';
 import './DocumentReferences.css';
 import { getDB } from '../../db/db';
 
+/**
+ * Interface for document chunk data with similarity scoring
+ */
 export interface DocumentChunk {
   content?: string;
   documentName: string;
@@ -39,22 +47,39 @@ export interface DocumentChunk {
   chunkIndex?: number;
 }
 
+/**
+ * Props for the DocumentReferences component
+ */
 interface DocumentReferencesProps {
   references: DocumentChunk[];
 }
 
+/**
+ * Component for displaying document references used in RAG responses
+ * @param props - Component props containing document references
+ * @returns JSX element showing expandable document references with content
+ */
 export const DocumentReferences: React.FC<DocumentReferencesProps> = ({ references }) => {
   const [expanded, setExpanded] = useState<number | false>(false);
   const [referencesWithContent, setReferences] = useState<DocumentChunk[]>(references);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadedChunks, setLoadedChunks] = useState<Set<string>>(new Set());
 
+  /**
+   * Handle accordion panel expansion/collapse
+   * @param panel - Panel index to toggle
+   * @returns Event handler function for accordion state changes
+   */
   const handleChange = (panel: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
 
   // Load content for all chunks when the component mounts or references change
   useEffect(() => {
+    /**
+     * Load full content for document chunks from the database
+     * Fetches chunk content using chunkId or falls back to documentId lookup
+     */
     const loadAllContent = async () => {
       setIsLoading(true);
       
@@ -147,7 +172,10 @@ export const DocumentReferences: React.FC<DocumentReferencesProps> = ({ referenc
     return null;
   }
 
-  // Group references by document name
+  /**
+   * Group references by document name for organized display
+   * Creates a map of document names to their associated chunks
+   */
   const documentGroups = referencesWithContent.reduce((groups, ref) => {
     if (!groups[ref.documentName]) {
       groups[ref.documentName] = [];
@@ -257,4 +285,4 @@ export const DocumentReferences: React.FC<DocumentReferencesProps> = ({ referenc
       ))}
     </Paper>
   );
-}; 
+};  

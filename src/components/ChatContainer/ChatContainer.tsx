@@ -12,12 +12,21 @@
  * limitations under the License.
  */
 
+/**
+ * Chat container component providing the main layout structure
+ * Combines header and chat content in a unified container
+ */
+
 import React from 'react';
 import { Box } from '@mui/material';
 import { Header } from '../Header/Header';
 import { ChatContent } from '../ChatContent/ChatContent';
 import './ChatContainer.css';
 
+/**
+ * Main chat container component that wraps header and chat content
+ * @returns JSX element containing the complete chat layout
+ */
 export const ChatContainer: React.FC = () => {
   return (
     <Box className="chat-container">

@@ -14,7 +14,8 @@
 
 /**
  * Detects if the current device is a mobile device
- * Uses multiple methods for better accuracy
+ * Uses multiple methods for better accuracy including userAgentData API and screen size
+ * @returns True if the device is detected as mobile, false otherwise
  */
 export const isMobileDevice = (): boolean => {
   // Method 1: Check navigator.userAgentData (newer API)
@@ -56,6 +57,8 @@ export const isMobileDevice = (): boolean => {
 
 /**
  * Detects if the device is a tablet specifically
+ * Checks for iPad and other tablet indicators in user agent
+ * @returns True if the device is detected as a tablet, false otherwise
  */
 export const isTablet = (): boolean => {
   const userAgent = navigator.userAgent.toLowerCase();
@@ -67,10 +70,11 @@ export const isTablet = (): boolean => {
 };
 
 /**
- * Get device type as a string
+ * Get device type as a string classification
+ * @returns Device type classification: 'mobile', 'tablet', or 'desktop'
  */
 export const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
   if (isTablet()) return 'tablet';
   if (isMobileDevice()) return 'mobile';
   return 'desktop';
-}; 
+};  

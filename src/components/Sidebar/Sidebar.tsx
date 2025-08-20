@@ -17,7 +17,6 @@ import {
   Box, 
   Typography, 
   List, 
-  Button, 
   IconButton, 
   Tooltip, 
   Tabs, 
@@ -25,8 +24,6 @@ import {
   Badge,
   Chip
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChatIcon from '@mui/icons-material/Chat';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -43,10 +40,18 @@ import { vectorDbService } from '../../services/VectorDbService';
 import { VectorDbConfig } from '../../types/vectorDb';
 import { useSettings } from '../../context/SettingsContext';
 
+/**
+ * Props for the Sidebar component
+ */
 interface SidebarProps {
   onOpenSettings: () => void;
 }
 
+/**
+ * Sidebar component providing navigation, session management, and quick access to settings
+ * @param props - Component props including settings handler
+ * @returns Sidebar navigation component
+ */
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
   const dispatch = useAppDispatch();
   const currentSessionId = useAppSelector(state => state.chat.currentSessionId);
