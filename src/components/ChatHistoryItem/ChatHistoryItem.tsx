@@ -13,8 +13,8 @@
  */
 
 import React from 'react';
-import { ListItem, ListItemButton, ListItemText, IconButton, Tooltip } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { Trash2 } from 'lucide-react';
+import { Button } from '../ui/button';
 import { useAppDispatch, loadSession } from '../../store/store';
 import { getDB } from '../../db/db';
 import type { SessionDocType, MessageDocType } from '../../db/types';
@@ -64,59 +64,33 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
   });
 
   return (
-    <ListItem
-      disablePadding
-      sx={{ position: 'relative' }}
-    >
-      <ListItemButton
+    <div className="relative">
+      <button
         onClick={handleSelectSession}
-        sx={{
-          borderRadius: 1,
-          mb: 0.5,
-          px: 1.5,
-          py: 1,
-          transition: 'background-color 0.2s ease',
-          ...(isActive && {
-            bgcolor: 'action.selected',
-          }),
-          '&:hover': {
-            bgcolor: 'action.hover',
-          }
-        }}
+        className={`w-full text-left rounded px-3 py-2 mb-1 transition-colors duration-200 relative ${
+          isActive 
+            ? 'bg-accent text-accent-foreground' 
+            : 'hover:bg-accent/50'
+        }`}
       >
-        <ListItemText
-          primary={session.title}
-          secondary={`${formattedDate}, ${formattedTime}`}
-          primaryTypographyProps={{
-            noWrap: true,
-            sx: { 
-              fontWeight: 500,
-              color: 'text.primary'
-            }
-          }}
-          secondaryTypographyProps={{
-            noWrap: true,
-            sx: {
-              fontSize: '0.75rem',
-              color: 'text.secondary'
-            }
-          }}
-        />
-        <IconButton
-          aria-label="delete"
+        <div className="pr-8">
+          <div className="font-medium text-sm truncate text-foreground">
+            {session.title}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">
+            {formattedDate}, {formattedTime}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleDelete}
-          size="small"
-          sx={{ 
-            position: 'absolute', 
-            right: 8, 
-            top: '50%', 
-            transform: 'translateY(-50%)',
-            color: 'error.light'
-          }}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+          aria-label="delete"
         >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </ListItemButton>
-    </ListItem>
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </button>
+    </div>
   );
 };

@@ -13,27 +13,18 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Box,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip,
-  Paper,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import WindowsIcon from '@mui/icons-material/Computer';
-import AppleIcon from '@mui/icons-material/Apple';
-import LinuxIcon from '@mui/icons-material/Terminal';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { 
+  Monitor, 
+  Apple, 
+  Terminal, 
+  Copy 
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Card } from '../ui/card';
 import { getSettings, saveSettings } from '../../utils/settings';
 
 interface DownloadsPathDialogProps {
@@ -54,7 +45,7 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
 
   const platforms: PlatformInstructions[] = [
     {
-      icon: <WindowsIcon />,
+      icon: <Monitor className="h-4 w-4" />,
       name: 'Windows',
       example: 'C:\\Users\\YourUsername\\Downloads',
       steps: [
@@ -66,7 +57,7 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
       ]
     },
     {
-      icon: <AppleIcon />,
+      icon: <Apple className="h-4 w-4" />,
       name: 'macOS',
       example: '/Users/YourUsername/Downloads',
       steps: [
@@ -78,7 +69,7 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
       ]
     },
     {
-      icon: <LinuxIcon />,
+      icon: <Terminal className="h-4 w-4" />,
       name: 'Linux',
       example: '/home/YourUsername/Downloads',
       steps: [
@@ -128,83 +119,104 @@ export const DownloadsPathDialog: React.FC<DownloadsPathDialogProps> = ({ open, 
   };
 
   return (
-    <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>Configure Downloads Folder Path</DialogTitle>
-      <DialogContent>
-        <Alert severity="info" sx={{ mb: 3 }}>
-          To open files directly in VS Code, we need to know where your Downloads folder is located.
-          This is a one-time setup.
-        </Alert>
+    <Dialog open={open} onOpenChange={(open) => !open && handleCancel()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Configure Downloads Folder Path</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              To open files directly in VS Code, we need to know where your Downloads folder is located.
+              This is a one-time setup.
+            </AlertDescription>
+          </Alert>
 
-        <Typography variant="subtitle1" sx={{ mb: 2 }}>
-          Select your operating system for instructions:
-        </Typography>
+          <div>
+            <h4 className="text-sm font-medium mb-3">
+              Select your operating system for instructions:
+            </h4>
 
-        {platforms.map((platform) => (
-          <Accordion key={platform.name}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {platform.icon}
-                <Typography>{platform.name}</Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                <strong>Example path:</strong>
-              </Typography>
-              <Paper
-                sx={{
-                  p: 1,
-                  mb: 2,
-                  bgcolor: 'grey.100',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <code>{platform.example}</code>
-                <Button
-                  size="small"
-                  startIcon={<ContentCopyIcon />}
-                  onClick={() => handleCopyExample(platform.example)}
-                >
-                  Copy
-                </Button>
-              </Paper>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Steps to get your path:</strong>
-              </Typography>
-              <Box component="ol" sx={{ pl: 3, mb: 0 }}>
-                {platform.steps.map((step, index) => (
-                  <li key={index}>
-                    <Typography variant="body2">{step}</Typography>
-                  </li>
-                ))}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        ))}
+            <Accordion type="single" collapsible className="w-full">
+              {platforms.map((platform) => (
+                <AccordionItem key={platform.name} value={platform.name}>
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center gap-2">
+                      {platform.icon}
+                      <span>{platform.name}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium mb-2">
+                          <strong>Example path:</strong>
+                        </p>
+                        <Card className="p-3 bg-muted flex items-center justify-between">
+                          <code className="text-sm">{platform.example}</code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCopyExample(platform.example)}
+                            className="flex items-center gap-1"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Copy
+                          </Button>
+                        </Card>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium mb-2">
+                          <strong>Steps to get your path:</strong>
+                        </p>
+                        <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                          {platform.steps.map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
 
-        <TextField
-          fullWidth
-          label="Downloads Folder Path"
-          value={path}
-          onChange={(e) => {
-            setPath(e.target.value);
-            setError('');
-          }}
-          error={!!error}
-          helperText={error || 'Paste your Downloads folder path here'}
-          placeholder="e.g., C:\\Users\\YourName\\Downloads or /Users/YourName/Downloads"
-          sx={{ mt: 3 }}
-        />
+          <div className="space-y-2">
+            <label htmlFor="path-input" className="text-sm font-medium">
+              Downloads Folder Path
+            </label>
+            <Input
+              id="path-input"
+              value={path}
+              onChange={(e) => {
+                setPath(e.target.value);
+                setError('');
+              }}
+              placeholder="e.g., C:\\Users\\YourName\\Downloads or /Users/YourName/Downloads"
+              className={error ? 'border-red-500' : ''}
+            />
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+            {!error && (
+              <p className="text-sm text-muted-foreground">
+                Paste your Downloads folder path here
+              </p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Path
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCancel}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
-          Save Path
-        </Button>
-      </DialogActions>
     </Dialog>
   );
-}; 
+};    

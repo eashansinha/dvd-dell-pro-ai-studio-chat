@@ -17,26 +17,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Tooltip,
-  useTheme,
-  alpha,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
-import CodeIcon from '@mui/icons-material/Code';
+import { Copy, Check, Code } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+const useToast = () => ({
+  toast: ({ description, variant }: { description: string; variant?: 'default' | 'destructive' }) => {
+    console.log(`Toast: ${description}`);
+  }
+});
 import VSCodeIconSvg from '../../assets/vscode.svg';
 import { getSettings } from '../../utils/settings';
 import { DownloadsPathDialog } from './DownloadsPathDialog';
@@ -50,35 +39,29 @@ interface CodeBlockProps {
   children: string;
 }
 
-interface SnackbarMessage {
-  message: string;
-  severity: 'success' | 'info' | 'warning' | 'error';
-}
 
 const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
   const [copied, setCopied] = useState(false);
-  const [snackbar, setSnackbar] = useState<SnackbarMessage | null>(null);
   const [showPathDialog, setShowPathDialog] = useState(false);
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
+  const { toast } = useToast();
+  const isDarkMode = document.documentElement.classList.contains('dark');
 
-  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error' = 'info') => {
-    setSnackbar({ message, severity });
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbar(null);
+  const showToast = (message: string, variant: 'default' | 'destructive' = 'default') => {
+    toast({
+      description: message,
+      variant,
+    });
   };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(children);
       setCopied(true);
-      showSnackbar('Code copied to clipboard!', 'success');
+      showToast('Code copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-      showSnackbar('Failed to copy code', 'error');
+      showToast('Failed to copy code', 'destructive');
     }
   };
 
@@ -144,7 +127,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
       
       setTimeout(() => URL.revokeObjectURL(url), 100);
 
-      showSnackbar(`Code saved as "${filename}". Opening in VS Code...`, 'success');
+      showToast(`Code saved as "${filename}". Opening in VS Code...`);
 
       // Try to open VS Code with the full path
       setTimeout(() => {
@@ -153,12 +136,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
         
         // Try to open VS Code with the file
         window.open(`vscode://file/${fullPath}`);
-        showSnackbar('VS Code should be opening with your file.', 'info');
+        showToast('VS Code should be opening with your file.');
       }, 500);
       
     } catch (err) {
       console.error('Failed to save code:', err);
-      showSnackbar('Code copied to clipboard. Create a new file in VS Code and paste (Ctrl/Cmd+V)', 'warning');
+      showToast('Code copied to clipboard. Create a new file in VS Code and paste (Ctrl/Cmd+V)');
     }
   };
 
@@ -179,86 +162,59 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
       
     } catch (err) {
       console.error('Failed to open in VS Code:', err);
-      showSnackbar('Code copied to clipboard. Create a new file in VS Code and paste (Ctrl/Cmd+V)', 'warning');
+      showToast('Code copied to clipboard. Create a new file in VS Code and paste (Ctrl/Cmd+V)');
     }
   };
 
   return (
-    <>
-      <Paper
-        elevation={0}
-        sx={{
-          my: 2,
-          overflow: 'hidden',
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 2,
-        }}
-      >
+    <TooltipProvider>
+      <Card className="my-4 overflow-hidden border">
         {/* Header */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 2,
-            py: 1,
-            bgcolor: isDarkMode ? 'grey.900' : 'grey.100',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CodeIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+        <div className={`flex items-center justify-between px-4 py-2 border-b ${
+          isDarkMode ? 'bg-gray-900' : 'bg-gray-100'
+        }`}>
+          <div className="flex items-center gap-2">
+            <Code className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-mono text-muted-foreground">
               {language || 'plaintext'}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Tooltip title="Open in VS Code">
-              <IconButton
-                size="small"
-                onClick={handleOpenInVSCode}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    bgcolor: isDarkMode ? 'grey.800' : 'grey.200',
-                  },
-                  '& img': {
-                    width: 16,
-                    height: 16,
-                  }
-                }}
-              >
-                <img src={VSCodeIconSvg} alt="VS Code" />
-              </IconButton>
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenInVSCode}
+                  className="h-8 w-8 p-0"
+                >
+                  <img src={VSCodeIconSvg} alt="VS Code" className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Open in VS Code</p>
+              </TooltipContent>
             </Tooltip>
-            <Tooltip title={copied ? "Copied!" : "Copy code"}>
-              <IconButton
-                size="small"
-                onClick={handleCopy}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    bgcolor: isDarkMode ? 'grey.800' : 'grey.200',
-                  },
-                }}
-              >
-                {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
-              </IconButton>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="h-8 w-8 p-0"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{copied ? "Copied!" : "Copy code"}</p>
+              </TooltipContent>
             </Tooltip>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
         {/* Code content */}
-        <Box
-          sx={{
-            '& pre': {
-              margin: 0,
-              borderRadius: 0,
-            },
-          }}
-        >
+        <div className="[&_pre]:m-0 [&_pre]:rounded-none">
           <SyntaxHighlighter
             style={isDarkMode ? vscDarkPlus : vs}
             language={language}
@@ -273,46 +229,27 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
           >
             {children}
           </SyntaxHighlighter>
-        </Box>
-      </Paper>
+        </div>
+      </Card>
 
       {/* Downloads Path Configuration Dialog */}
       <DownloadsPathDialog
         open={showPathDialog}
         onClose={handlePathDialogClose}
       />
-
-      {/* Snackbar for notifications */}
-      {snackbar && (
-        <Snackbar
-          open={true}
-          autoHideDuration={4000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-            variant="filled"
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      )}
-    </>
+    </TooltipProvider>
   );
 };
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
-  const theme = useTheme();
+  const isDarkMode = document.documentElement.classList.contains('dark');
 
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
         // Code blocks with syntax highlighting
-        code({ node, inline, className, children, ...props }: any) {
+        code({ inline, className, children }: any) {
           const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
             <CodeBlock language={match[1]}>
@@ -320,132 +257,113 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
             </CodeBlock>
           ) : (
             <code
-              style={{
-                backgroundColor: theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.08)' 
-                  : 'rgba(135, 131, 120, 0.15)',
-                borderRadius: '3px',
-                padding: '0.2em 0.4em',
-                fontSize: '85%',
-                fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-              }}
+              className={`rounded px-1.5 py-0.5 text-sm font-mono ${
+                isDarkMode 
+                  ? 'bg-white/10' 
+                  : 'bg-gray-100'
+              }`}
             >
               {children}
             </code>
           );
         },
-        // Tables with MUI styling
+        // Tables with shadcn styling
         table({ children }: any) {
           return (
-            <TableContainer component={Paper} sx={{ my: 2 }}>
-              <Table size="small">{children}</Table>
-            </TableContainer>
+            <Card className="my-4 overflow-hidden">
+              <table className="w-full text-sm">
+                {children}
+              </table>
+            </Card>
           );
         },
         thead({ children }: any) {
-          return <TableHead>{children}</TableHead>;
+          return <thead className="bg-muted/50">{children}</thead>;
         },
         tbody({ children }: any) {
-          return <TableBody>{children}</TableBody>;
+          return <tbody>{children}</tbody>;
         },
         tr({ children }: any) {
-          return <TableRow>{children}</TableRow>;
+          return <tr className="border-b">{children}</tr>;
         },
         td({ children }: any) {
-          return <TableCell>{children}</TableCell>;
+          return <td className="p-2 text-left">{children}</td>;
         },
         th({ children }: any) {
-          return <TableCell component="th" sx={{ fontWeight: 'bold' }}>{children}</TableCell>;
+          return <th className="p-2 text-left font-semibold">{children}</th>;
         },
         // Typography elements
         p({ children }: any) {
-          return <Typography component="p" sx={{ mb: 2 }}>{children}</Typography>;
+          return <p className="mb-4 leading-7">{children}</p>;
         },
         h1({ children }: any) {
-          return <Typography variant="h4" component="h1" sx={{ mb: 2, mt: 3 }}>{children}</Typography>;
+          return <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mb-4 mt-6">{children}</h1>;
         },
         h2({ children }: any) {
-          return <Typography variant="h5" component="h2" sx={{ mb: 2, mt: 2.5 }}>{children}</Typography>;
+          return <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight mb-4 mt-6">{children}</h2>;
         },
         h3({ children }: any) {
-          return <Typography variant="h6" component="h3" sx={{ mb: 1.5, mt: 2 }}>{children}</Typography>;
+          return <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight mb-3 mt-4">{children}</h3>;
         },
         h4({ children }: any) {
-          return <Typography variant="subtitle1" component="h4" sx={{ mb: 1, mt: 1.5, fontWeight: 'bold' }}>{children}</Typography>;
+          return <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-2 mt-3">{children}</h4>;
         },
         h5({ children }: any) {
-          return <Typography variant="subtitle2" component="h5" sx={{ mb: 0.5, mt: 1, fontWeight: 'bold' }}>{children}</Typography>;
+          return <h5 className="scroll-m-20 text-lg font-semibold tracking-tight mb-2 mt-2">{children}</h5>;
         },
         h6({ children }: any) {
-          return <Typography variant="body2" component="h6" sx={{ mb: 0.5, mt: 1, fontWeight: 'bold' }}>{children}</Typography>;
+          return <h6 className="scroll-m-20 text-base font-semibold tracking-tight mb-1 mt-2">{children}</h6>;
         },
         // Lists
         ul({ children }: any) {
-          return <Box component="ul" sx={{ pl: 3, mb: 2 }}>{children}</Box>;
+          return <ul className="my-6 ml-6 list-disc [&>li]:mt-2">{children}</ul>;
         },
         ol({ children }: any) {
-          return <Box component="ol" sx={{ pl: 3, mb: 2 }}>{children}</Box>;
+          return <ol className="my-6 ml-6 list-decimal [&>li]:mt-2">{children}</ol>;
         },
         li({ children }: any) {
-          return <Box component="li" sx={{ mb: 0.5 }}>{children}</Box>;
+          return <li>{children}</li>;
         },
         // Blockquotes
         blockquote({ children }: any) {
           return (
-            <Box
-              component="blockquote"
-              sx={{
-                borderLeft: '4px solid',
-                borderColor: 'divider',
-                pl: 2,
-                ml: 0,
-                my: 2,
-                color: 'text.secondary',
-              }}
-            >
+            <blockquote className="mt-6 border-l-2 pl-6 italic text-muted-foreground">
               {children}
-            </Box>
+            </blockquote>
           );
         },
         // Horizontal rule
         hr() {
-          return <Box component="hr" sx={{ my: 3, border: 'none', borderTop: '1px solid', borderColor: 'divider' }} />;
+          return <hr className="my-6 border-border" />;
         },
         // Links
         a({ href, children }: any) {
           return (
-            <Box
-              component="a"
+            <a
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              sx={{
-                color: 'primary.main',
-                textDecoration: 'underline',
-                '&:hover': {
-                  textDecoration: 'none',
-                },
-              }}
+              className="font-medium text-primary underline underline-offset-4 hover:no-underline"
             >
               {children}
-            </Box>
+            </a>
           );
         },
         // Strong/bold
         strong({ children }: any) {
-          return <Box component="strong" sx={{ fontWeight: 'bold' }}>{children}</Box>;
+          return <strong className="font-semibold">{children}</strong>;
         },
         // Emphasis/italic
         em({ children }: any) {
-          return <Box component="em" sx={{ fontStyle: 'italic' }}>{children}</Box>;
+          return <em className="italic">{children}</em>;
         },
         // Strikethrough
         del({ children }: any) {
-          return <Box component="del" sx={{ textDecoration: 'line-through' }}>{children}</Box>;
+          return <del className="line-through">{children}</del>;
         },
       }}
     >
       {content}
     </ReactMarkdown>
   );
-}; 
+};         

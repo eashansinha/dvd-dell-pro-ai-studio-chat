@@ -13,10 +13,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, IconButton } from '@mui/material';
-import PsychologyIcon from '@mui/icons-material/Psychology';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card } from '../ui/card';
+import { Button } from '../ui/button';
 import ReactMarkdown from 'react-markdown';
 import { useAppSelector } from '../../store/store';
 
@@ -51,73 +50,30 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
   };
   
   return (
-    <Paper 
-      sx={{
-        p: 1.5,
-        my: 0.75,
-        mx: 0,
-        bgcolor: 'background.paper',
-        borderLeft: '4px solid',
-        borderLeftColor: 'secondary.main',
-        borderRadius: '6px'
-      }}
-    >
-      <Box 
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          mb: 1,
-          cursor: 'pointer',
-          p: 0.5,
-          borderRadius: 0.5,
-          '&:hover': {
-            bgcolor: theme => `rgba(${theme.palette.secondary.main.replace('#', '').match(/../g)?.map(hex => parseInt(hex, 16)).join(', ') || '0, 0, 0'}, 0.1)`
-          }
-        }} 
+    <Card className="p-3 my-2 mx-0 bg-card border-l-4 border-l-secondary rounded-md">
+      <div 
+        className="flex items-center mb-2 cursor-pointer p-1 rounded hover:bg-secondary/10 transition-colors"
         onClick={handleToggle}
       >
-        <PsychologyIcon 
-          sx={{ 
-            color: 'secondary.main',
-            mr: 1
-          }} 
-        />
-        <Typography 
-          variant="subtitle2" 
-          sx={{ 
-            color: 'secondary.main',
-            fontWeight: 600
-          }}
-        >
+        <Brain className="text-secondary mr-2 h-4 w-4" />
+        <h4 className="text-secondary font-semibold text-sm">
           {isStreaming ? "Thinking..." : "Thinking Process"}
-        </Typography>
-        <Box sx={{ flexGrow: 1 }} />
-        <IconButton 
-          size="small" 
-          sx={{ color: 'secondary.main' }}
+        </h4>
+        <div className="flex-grow" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 w-6 p-0 text-secondary hover:bg-secondary/10"
         >
-          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        </IconButton>
-      </Box>
+          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </Button>
+      </div>
       
       {expanded && (
-        <Box 
-          sx={{
-            whiteSpace: 'pre-wrap',
-            fontFamily: '"Consolas", "Monaco", monospace',
-            fontSize: '0.85rem',
-            maxHeight: 300,
-            overflowY: 'auto',
-            bgcolor: 'background.default',
-            p: 1.5,
-            borderRadius: 0.5,
-            border: '1px solid',
-            borderColor: 'divider'
-          }}
-        >
+        <div className="whitespace-pre-wrap font-mono text-sm max-h-[300px] overflow-y-auto bg-background p-3 rounded border border-border">
           <ReactMarkdown>{content || 'Processing your request...'}</ReactMarkdown>
-        </Box>
+        </div>
       )}
-    </Paper>
+    </Card>
   );
 };

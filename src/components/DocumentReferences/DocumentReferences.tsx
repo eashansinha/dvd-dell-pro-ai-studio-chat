@@ -13,20 +13,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { FileText, Loader2 } from 'lucide-react';
 import {
-  Box,
-  Typography,
   Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip,
-  Divider,
-  Paper,
-  LinearProgress,
-  CircularProgress
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ArticleIcon from '@mui/icons-material/Article';
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../ui/accordion';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { Progress } from '../ui/progress';
 import './DocumentReferences.css';
 import { getDB } from '../../db/db';
 
@@ -47,10 +44,9 @@ export const DocumentReferences: React.FC<DocumentReferencesProps> = ({ referenc
   const [expanded, setExpanded] = useState<number | false>(false);
   const [referencesWithContent, setReferences] = useState<DocumentChunk[]>(references);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadedChunks, setLoadedChunks] = useState<Set<string>>(new Set());
-
-  const handleChange = (panel: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
+  const handleAccordionChange = (value: string) => {
+    const panelIndex = parseInt(value);
+    setExpanded(expanded === panelIndex ? false : panelIndex);
   };
 
   // Load content for all chunks when the component mounts or references change
@@ -169,92 +165,78 @@ export const DocumentReferences: React.FC<DocumentReferencesProps> = ({ referenc
   // console.log("documentGroups", documentGroups)
 
   return (
-    <Paper sx={{ 
-      mt: 2, 
-      borderRadius: 1,
-      border: '1px solid',
-      borderColor: 'divider'
-    }} elevation={0}>
-      <Box sx={{ p: 1.5, pb: 1, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-          References
-        </Typography>
-        {isLoading && (
-          <CircularProgress size={16} sx={{ ml: 1 }} />
-        )}
-      </Box>
-      <Divider />
+    <Card className="mt-4 border border-border rounded-lg">
+      <CardHeader className="p-3 pb-2">
+        <div className="flex items-center">
+          <h3 className="text-sm font-medium flex-grow">References</h3>
+          {isLoading && (
+            <Loader2 className="h-4 w-4 animate-spin ml-2" />
+          )}
+        </div>
+      </CardHeader>
+      <Separator />
       
-      {Object.entries(documentGroups).map(([docName, chunks], docIndex) => (
+      <CardContent className="p-0">
         <Accordion 
-          key={docIndex} 
-          expanded={expanded === docIndex}
-          onChange={handleChange(docIndex)}
-          sx={{ 
-            '&:not(:last-child)': {
-              borderBottom: '1px solid',
-              borderBottomColor: 'divider'
-            }
-          }}
+          type="single" 
+          collapsible 
+          value={expanded !== false ? expanded.toString() : undefined}
+          onValueChange={handleAccordionChange}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box className="document-header">
-              <ArticleIcon fontSize="small" className="doc-icon" />
-              <Typography variant="body2" className="doc-name">
-                {docName}
-              </Typography>
-              <Chip 
-                label={`${chunks.length} ${chunks.length === 1 ? 'chunk' : 'chunks'}`} 
-                size="small" 
-                className="chunk-count"
-              />
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails>
-            {chunks.map((chunk, chunkIndex) => (
-              <Box key={chunkIndex} className="chunk-container">
-                <Box className="chunk-header">
-                  <Typography variant="caption" color="textSecondary" style={{ display: "inline-block", whiteSpace: "pre-line", wordBreak: "break-word" }}>
-                    {chunk.chunkIndex !== undefined 
-                      ? `Chunk ${chunk.chunkIndex + 1}` 
-                      : `Chunk ${chunkIndex + 1}`} • Similarity: {(chunk.similarity * 100).toFixed(1)}%
-                  </Typography>
-                </Box>
-                <Box className="chunk-content">
-                  {!chunk.content && (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      {isLoading ? "Loading content..." : "Content not available"}
-                    </Typography>
-                  )}
-                  {chunk.content && (
-                    <Typography variant="body2">
-                      {chunk.content}
-                    </Typography>
-                  )}
-                </Box>
-                <Box className="chunk-relevance">
-                  <Typography variant="caption" color="textSecondary">
-                    Relevance: {chunk.similarity > 0.9 ? 'Very High' : 
-                               chunk.similarity > 0.8 ? 'High' : 
-                               chunk.similarity > 0.7 ? 'Medium' : 'Low'}
-                  </Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={chunk.similarity * 100} 
-                    sx={{ 
-                      height: 4, 
-                      width: '100px', 
-                      borderRadius: 2,
-                      bgcolor: 'rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </Box>
-                {chunkIndex < chunks.length - 1 && <Divider className="chunk-divider" />}
-              </Box>
-            ))}
-          </AccordionDetails>
+          {Object.entries(documentGroups).map(([docName, chunks], docIndex) => (
+            <AccordionItem key={docIndex} value={docIndex.toString()} className="border-b last:border-b-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="document-header flex items-center gap-2 w-full">
+                  <FileText className="h-4 w-4 doc-icon flex-shrink-0" />
+                  <span className="doc-name text-sm font-medium flex-grow text-left truncate">
+                    {docName}
+                  </span>
+                  <Badge variant="secondary" className="chunk-count text-xs">
+                    {chunks.length} {chunks.length === 1 ? 'chunk' : 'chunks'}
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {chunks.map((chunk, chunkIndex) => (
+                  <div key={chunkIndex} className="chunk-container">
+                    <div className="chunk-header mb-2">
+                      <p className="text-xs text-muted-foreground whitespace-pre-line break-words">
+                        {chunk.chunkIndex !== undefined 
+                          ? `Chunk ${chunk.chunkIndex + 1}` 
+                          : `Chunk ${chunkIndex + 1}`} • Similarity: {(chunk.similarity * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="chunk-content mb-3">
+                      {!chunk.content && (
+                        <p className="text-sm text-muted-foreground italic">
+                          {isLoading ? "Loading content..." : "Content not available"}
+                        </p>
+                      )}
+                      {chunk.content && (
+                        <p className="text-sm leading-relaxed">
+                          {chunk.content}
+                        </p>
+                      )}
+                    </div>
+                    <div className="chunk-relevance flex items-center gap-2 mb-3">
+                      <span className="text-xs text-muted-foreground">
+                        Relevance: {chunk.similarity > 0.9 ? 'Very High' : 
+                                   chunk.similarity > 0.8 ? 'High' : 
+                                   chunk.similarity > 0.7 ? 'Medium' : 'Low'}
+                      </span>
+                      <Progress 
+                        value={chunk.similarity * 100} 
+                        className="w-24 h-1"
+                      />
+                    </div>
+                    {chunkIndex < chunks.length - 1 && <Separator className="chunk-divider my-3" />}
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
-      ))}
-    </Paper>
+      </CardContent>
+    </Card>
   );
-}; 
+};      

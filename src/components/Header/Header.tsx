@@ -13,29 +13,19 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Separator } from '../ui/separator';
 import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Box, 
-  Chip, 
-  Tooltip, 
-  Divider, 
-  Badge,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Paper
-} from '@mui/material';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import DescriptionIcon from '@mui/icons-material/Description';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import ArticleIcon from '@mui/icons-material/Article';
-import LabelIcon from '@mui/icons-material/Label';
-import CloudIcon from '@mui/icons-material/Cloud';
-import DatabaseIcon from '@mui/icons-material/Storage';
+  Clock, 
+  Calendar, 
+  FileText, 
+  Tag, 
+  File, 
+  Tags, 
+  Cloud, 
+  Database 
+} from 'lucide-react';
 import { useAppSelector } from '../../store/store';
 import { getDB } from '../../db/db';
 import { ModelSelector } from '../ModelSelector/ModelSelector';
@@ -49,7 +39,6 @@ interface DocumentInfo {
 
 export const Header: React.FC = () => {
   const { messages, currentSessionId } = useAppSelector(state => state.chat);
-  const [sessionTitle, setSessionTitle] = useState<string>('New Chat');
   const [documentTags, setDocumentTags] = useState<string[]>([]);
   const [docsCount, setDocsCount] = useState<number>(0);
   const [documentInfo, setDocumentInfo] = useState<DocumentInfo[]>([]);
@@ -67,7 +56,6 @@ export const Header: React.FC = () => {
         }).exec();
 
         if (session) {
-          setSessionTitle(session.title);
           
           // Get RAG information
           if (session.documentTags && session.documentTags.length > 0) {
@@ -190,170 +178,132 @@ export const Header: React.FC = () => {
 
   // Custom tooltip content for documents
   const DocsTooltipContent = () => (
-    <Paper sx={{ 
-      p: 0.75, 
-      maxWidth: 240, 
-      backgroundColor: 'background.default',
-      borderRadius: 1,
-      border: '1px solid',
-      borderColor: 'divider'
-    }}>
-
+    <div className="p-3 max-w-60 bg-popover border border-border rounded-md">
       {documentInfo.length > 0 ? (
-        <List dense disablePadding sx={{ maxHeight: '180px', overflow: 'auto' }}>
+        <div className="max-h-44 overflow-auto space-y-1">
           {documentInfo.map((doc) => (
-            <ListItem key={doc.id} sx={{ py: 0.25 }}>
-              <ListItemIcon sx={{ minWidth: 24 }}>
+            <div key={doc.id} className="flex items-center gap-2 py-1">
+              <div className="min-w-6">
                 {doc.type === 'local' ? (
-                  <ArticleIcon fontSize="small" color="primary" />
+                  <File className="h-4 w-4 text-primary" />
                 ) : doc.type === 'backend' ? (
-                  <CloudIcon fontSize="small" color="secondary" />
+                  <Cloud className="h-4 w-4 text-secondary" />
                 ) : (
-                  <DatabaseIcon fontSize="small" color="secondary" />
+                  <Database className="h-4 w-4 text-secondary" />
                 )}
-              </ListItemIcon>
-              <ListItemText 
-                primary={doc.name} 
-                primaryTypographyProps={{ 
-                  variant: 'body2',
-                  noWrap: true,
-                  title: doc.name, // Full name on hover
-                  color: 'text.primary'
-                }}
-              />
-            </ListItem>
+              </div>
+              <span 
+                className="text-sm text-foreground truncate" 
+                title={doc.name}
+              >
+                {doc.name}
+              </span>
+            </div>
           ))}
-        </List>
+        </div>
       ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ px: 0.5 }}>
+        <p className="text-sm text-muted-foreground px-2">
           No document info available
-        </Typography>
+        </p>
       )}
-    </Paper>
+    </div>
   );
 
   // Custom tooltip content for tags
   const TagsTooltipContent = () => (
-    <Paper sx={{ 
-      p: 0.75, 
-      maxWidth: 240,
-      backgroundColor: 'background.default',
-      borderRadius: 1,
-      border: '1px solid',
-      borderColor: 'divider'
-    }}>
+    <div className="p-3 max-w-60 bg-popover border border-border rounded-md">
       {regularTags.length > 0 ? (
-        <List dense disablePadding sx={{ maxHeight: '150px', overflow: 'auto' }}>
+        <div className="max-h-36 overflow-auto space-y-1">
           {regularTags.map((tag, index) => (
-            <ListItem key={index} sx={{ py: 0.25 }}>
-              <ListItemIcon sx={{ minWidth: 24 }}>
-                <LabelIcon fontSize="small" color="secondary" />
-              </ListItemIcon>
-              <ListItemText 
-                primary={tag} 
-                primaryTypographyProps={{ 
-                  variant: 'body2',
-                  color: 'text.primary'
-                }}
-              />
-            </ListItem>
+            <div key={index} className="flex items-center gap-2 py-1">
+              <div className="min-w-6">
+                <Tags className="h-4 w-4 text-secondary" />
+              </div>
+              <span className="text-sm text-foreground">
+                {tag}
+              </span>
+            </div>
           ))}
-        </List>
+        </div>
       ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ px: 0.5 }}>
+        <p className="text-sm text-muted-foreground px-2">
           No tags available
-        </Typography>
+        </p>
       )}
-    </Paper>
+    </div>
   );
 
   return (
-    <AppBar position="static" color="default" elevation={0} className="header">
-      <Toolbar className="header-toolbar">
-        <Box className="header-title-container">
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <ModelSelector />
-            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-            {messages.length > 0 && (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box className="header-metadata" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Tooltip title="Date Created">
-                    <Chip
-                      icon={<CalendarTodayIcon fontSize="small" />}
-                      label={formattedDate}
-                      size="small"
-                      variant="outlined"
-                      className="header-chip"
-                    />
-                  </Tooltip>
+    <TooltipProvider>
+      <header className="bg-background border-b border-border header">
+        <div className="header-toolbar px-4 py-2">
+          <div className="header-title-container">
+            <div className="flex items-center">
+              <ModelSelector />
+              <Separator orientation="vertical" className="mx-2 h-6" />
+              {messages.length > 0 && (
+                <div className="flex items-center">
+                  <div className="header-metadata flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="header-chip flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formattedDate}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Date Created</TooltipContent>
+                    </Tooltip>
 
-                  <Tooltip title="Time Created">
-                    <Chip
-                      icon={<AccessTimeIcon fontSize="small" />}
-                      label={formattedTime}
-                      size="small"
-                      variant="outlined"
-                      className="header-chip"
-                    />
-                  </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="header-chip flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formattedTime}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Time Created</TooltipContent>
+                    </Tooltip>
 
-                  <Chip
-                    label={`${messages.length} messages`}
-                    size="small"
-                    variant="outlined"
-                    className="header-chip"
-                  />
-                  
-                  {/* Show RAG information when available */}
-                  {documentTags.length > 0 && (
-                    <>
-                      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-                      <Tooltip 
-                        title={<DocsTooltipContent />}
-                        placement="bottom"
-                        arrow
-                        sx={{
-                          backgroundColor: 'background.default',
-                          '& .MuiTooltip-tooltip': {
-                            backgroundColor: 'background.default',
-                            color: 'text.primary',
-                            border: '1px solid',
-                            borderColor: 'divider'
-                          }
-                        }}
-                      >
-                        <Chip
-                          icon={<DescriptionIcon fontSize="small" />}
-                          label={`${docsCount} document${docsCount !== 1 ? 's' : ''}`}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          className="header-chip"
-                        />
-                      </Tooltip>
-                      
-                      <Tooltip 
-                        title={<TagsTooltipContent />}
-                        placement="bottom"
-                        arrow
-                      >
-                        <Chip
-                          icon={<LocalOfferIcon fontSize="small" />}
-                          label={regularTags.length || 'Tags'}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          className="header-chip"
-                        />
-                      </Tooltip>
-                    </>
-                  )}
-                </Box>
-              </Box>
-            )}
-          </Box>
-        </Box>
-      </Toolbar>
-    </AppBar>
+                    <Badge variant="outline" className="header-chip">
+                      {`${messages.length} messages`}
+                    </Badge>
+                    
+                    {/* Show RAG information when available */}
+                    {documentTags.length > 0 && (
+                      <>
+                        <Separator orientation="vertical" className="mx-1 h-6" />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="header-chip flex items-center gap-1 text-primary border-primary">
+                              <FileText className="h-3 w-3" />
+                              {`${docsCount} document${docsCount !== 1 ? 's' : ''}`}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <DocsTooltipContent />
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="secondary" className="header-chip flex items-center gap-1">
+                              <Tag className="h-3 w-3" />
+                              {regularTags.length || 'Tags'}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <TagsTooltipContent />
+                          </TooltipContent>
+                        </Tooltip>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+    </TooltipProvider>
   );
 };

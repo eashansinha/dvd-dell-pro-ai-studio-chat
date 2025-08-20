@@ -12,20 +12,23 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Box, Avatar, Typography, Chip, Tooltip, Divider, IconButton, CircularProgress } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import SpeedIcon from '@mui/icons-material/Speed';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
-import CountertopsIcon from '@mui/icons-material/Countertops';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import CodeIcon from '@mui/icons-material/Code';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  User, 
+  Bot, 
+  Clock, 
+  Zap, 
+  Type, 
+  Hash, 
+  DollarSign, 
+  Code, 
+  RotateCcw,
+  Loader2
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Separator } from '../ui/separator';
 import { MessageDocType } from '../../db/types';
 import { ThinkingSection } from '../ThinkingSection/ThinkingSection';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
@@ -33,8 +36,7 @@ import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import { DocumentReferences, DocumentChunk } from '../DocumentReferences/DocumentReferences';
 import { getLastReferences } from '../../client/langchainClient';
 import { store } from '../../store/store';
-import { getTextToSpeech, summarizeText } from '../../client/openaiClient';
-import { useAppDispatch, useAppSelector } from '../../store/store';
+import { useAppDispatch } from '../../store/store';
 import { regenerateMessage } from '../../store/store';
 
 interface MessageBubbleProps {
@@ -49,10 +51,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   isThinking = false
 }) => {
   const isUser = message.sender === 'user';
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const dispatch = useAppDispatch();
   const [metrics, setMetrics] = useState(message.metrics || {});
@@ -95,8 +93,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     second: '2-digit'
   });
 
-  // Add this state to store whether this message used RAG
-  const [usedRag, setUsedRag] = useState(false);
   const [references, setReferences] = useState<DocumentChunk[]>(
     message.documentReferences?.map(ref => ({
       content: ref.content || "", // Use content if available
@@ -134,89 +130,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   }, [message.id, message.documentReferences]);
 
-  // Handle audio playback
-  const handleSpeechClick = async () => {
-    if (isPlaying && audioRef.current) {
-      // Stop playing if already playing
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      setIsPlaying(false);
-    } else {
-      try {
-        // Convert text to speech and play
-        const audioBlob = await getTextToSpeech(message.text);
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        if (!audioRef.current) {
-          // Create audio element if it doesn't exist
-          audioRef.current = new Audio(audioUrl);
-          audioRef.current.addEventListener('ended', () => {
-            setIsPlaying(false);
-          });
-        } else {
-          // Update source of existing audio element
-          audioRef.current.src = audioUrl;
-        }
-
-        // Play the audio
-        await audioRef.current.play();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error('Error playing speech:', error);
-        setIsPlaying(false);
-      }
-    }
-  };
-
-  // Handle summarization and playback
-  const handleSummarizeClick = async () => {
-    if (isPlaying && audioRef.current) {
-      // Stop playing if already playing
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      setIsPlaying(false);
-      return;
-    }
-
-    try {
-      setIsSummarizing(true);
-
-      // Get the current model from store
-      const currentModel = store.getState().chat.currentModel;
-
-      // Use cached summary if we have one
-      let summaryText = summary;
-
-      // Generate a new summary if we don't have one yet
-      if (!summaryText) {
-        summaryText = await summarizeText(message.text, currentModel);
-        setSummary(summaryText);
-      }
-
-      // Convert summary to speech
-      const audioBlob = await getTextToSpeech(summaryText);
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      if (!audioRef.current) {
-        // Create audio element if it doesn't exist
-        audioRef.current = new Audio(audioUrl);
-        audioRef.current.addEventListener('ended', () => {
-          setIsPlaying(false);
-        });
-      } else {
-        // Update source of existing audio element
-        audioRef.current.src = audioUrl;
-      }
-
-      // Play the audio
-      await audioRef.current.play();
-      setIsPlaying(true);
-    } catch (error) {
-      console.error('Error summarizing or playing speech:', error);
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
 
   // Handle regenerate click
   const handleRegenerateClick = () => {
@@ -232,15 +145,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }, 1000);
   };
 
-  // Clean up audio resources when component unmounts
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
-      }
-    };
-  }, []);
 
   // Helper function to format model name for display
   const formatModelName = (modelId: string): string => {
@@ -257,50 +161,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: isUser ? 'row-reverse' : 'row',
-      mb: 3,
-      gap: 2,
-      width: 'auto',
-      marginLeft: 'auto',
-      position: 'relative',
-      justifyContent: isUser ? 'flex-start' : 'flex-start',
-    }}>
-      <Avatar sx={{
-        flexShrink: 0,
-        mt: 1,
-        bgcolor: isUser ? 'primary.main' : 'secondary.main',
-      }}>
-        {isUser ? <PersonIcon /> : <SmartToyIcon />}
+    <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-6 gap-4 w-auto ml-auto relative justify-start`}>
+      <Avatar className={`flex-shrink-0 mt-2 ${isUser ? 'bg-primary' : 'bg-secondary'}`}>
+        <AvatarFallback>
+          {isUser ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+        </AvatarFallback>
       </Avatar>
 
-      <Box sx={{
-        flexGrow: 1,
-        maxWidth: { xs: '80%', sm: '85%', md: '95%' },
-        alignSelf: isUser ? 'flex-end' : 'flex-start',
-        textAlign: isUser ? 'right' : 'left', // Always keep text left-aligned
-      }}>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: isUser ? 'flex-end' : 'flex-start',
-          alignItems: 'center',
-          mb: 1,
-        }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, order: isUser ? 2 : 1 }}>
+      <div className={`flex-grow max-w-[80%] sm:max-w-[85%] md:max-w-[95%] ${isUser ? 'self-end text-right' : 'self-start text-left'}`}>
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} items-center mb-2`}>
+          <h3 className={`text-sm font-semibold ${isUser ? 'order-2' : 'order-1'}`}>
             {isUser ? 'You' : 'Assistant'}
-          </Typography>
-          <Box sx={{
-            color: 'text.secondary',
-            fontSize: '0.75rem',
-            mx: 1,
-            order: isUser ? 1 : 2
-          }}>
-            <Typography variant="caption">
+          </h3>
+          <div className={`text-muted-foreground text-xs mx-2 ${isUser ? 'order-1' : 'order-2'}`}>
+            <span>
               {formattedDate} {formattedTime}
-            </Typography>
-          </Box>
-        </Box>
+            </span>
+          </div>
+        </div>
 
         {/* Show thinking section for assistant messages */}
         {!isUser && (message.thinkingContent || thinkingContent) && (
@@ -311,100 +189,113 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           />
         )}
 
-        <Box sx={{
-          bgcolor: isUser ? 'primary.light' : 'transparent',
-          color: isUser ? 'primary.contrastText' : 'text.primary',
-          p: 2,
-          borderRadius: isUser ? 2 : 0,
-          boxShadow: isUser ? 1 : 0,
-        }}>
+        <div className={`${isUser ? 'bg-primary/10 text-primary-foreground p-4 rounded-lg shadow-sm' : 'bg-transparent text-foreground'}`}>
           {isUser ? (
-            <Typography>{message.text}</Typography>
+            <p>{message.text}</p>
           ) : (
             <MarkdownRenderer content={message.text} />
           )}
-        </Box>
+        </div>
 
         {/* Show metrics for assistant messages */}
         {hasMetrics && (
           <>
-            <Divider sx={{ my: 1, opacity: 0.5 }} />
-            <Box sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1,
-              mt: 1
-            }}>
+            <Separator className="my-2 opacity-50" />
+            <div className="flex flex-wrap gap-2 mt-2">
               {message.model && (
-                <Tooltip title="AI Model">
-                  <Chip
-                    icon={<CodeIcon fontSize="small" />}
-                    label={formatModelName(message.model)}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'info.light', color: 'info.contrastText', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none h-6 flex items-center gap-1">
+                        <Code className="h-3 w-3" />
+                        {formatModelName(message.model)}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>AI Model</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {metrics.processingTimeMs && (
-                <Tooltip title="Processing Time">
-                  <Chip
-                    icon={<AccessTimeIcon fontSize="small" />}
-                    label={`${(metrics.processingTimeMs / 1000).toFixed(2)}s`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'action.hover', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="bg-muted border-none h-6 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {`${(metrics.processingTimeMs / 1000).toFixed(2)}s`}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Processing Time</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {metrics.tokensGenerated && (
-                <Tooltip title="Tokens Generated">
-                  <Chip
-                    icon={<TextFieldsIcon fontSize="small" />}
-                    label={`${metrics.tokensGenerated} tokens`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'action.hover', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="bg-muted border-none h-6 flex items-center gap-1">
+                        <Type className="h-3 w-3" />
+                        {`${metrics.tokensGenerated} tokens`}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Tokens Generated</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {metrics.wordsGenerated && (
-                <Tooltip title="Words Generated">
-                  <Chip
-                    icon={<CountertopsIcon fontSize="small" />}
-                    label={`${metrics.wordsGenerated} words`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'action.hover', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="bg-muted border-none h-6 flex items-center gap-1">
+                        <Hash className="h-3 w-3" />
+                        {`${metrics.wordsGenerated} words`}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Words Generated</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {metrics.tokensPerSecond && (
-                <Tooltip title="Generation Speed">
-                  <Chip
-                    icon={<SpeedIcon fontSize="small" />}
-                    label={`${metrics.tokensPerSecond.toFixed(1)} t/s`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'action.hover', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="bg-muted border-none h-6 flex items-center gap-1">
+                        <Zap className="h-3 w-3" />
+                        {`${metrics.tokensPerSecond.toFixed(1)} t/s`}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Generation Speed</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {metrics.tokensGenerated && (
-                <Tooltip title="Cost at $10 per million tokens (gpt-4o pricing)">
-                  <Chip
-                    icon={<AttachMoneyIcon fontSize="small" />}
-                    label={`$${((metrics.tokensGenerated * 10) / 1000000).toFixed(6)}`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: 'action.hover', border: 'none', height: '24px' }}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="bg-muted border-none h-6 flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        {`$${((metrics.tokensGenerated * 10) / 1000000).toFixed(6)}`}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Cost at $10 per million tokens (gpt-4o pricing)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {/* {!isUser && (
@@ -460,29 +351,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               )} */}
               {/* Add regenerate section for the last assistant message */}
             {!isUser && isLastAssistantMessage && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Tooltip title="Regenerate response">
-                  <Chip
-                    icon={isRegenerating ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon fontSize="small" />}
-                    size="small"
-                    variant="outlined"
-                    onClick={handleRegenerateClick}
-                    disabled={isRegenerating}
-                    sx={{
-                      bgcolor: 'action.hover',
-                      border: 'none',
-                      height: '24px',
-                      cursor: isRegenerating ? 'default' : 'pointer',
-                      opacity: isRegenerating ? 0.7 : 1,
-                      '&:hover': {
-                        bgcolor: 'action.selected',
-                      }
-                    }}
-                  />
-                </Tooltip>
-              </Box>
+              <div className="flex justify-end">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge 
+                        variant="outline" 
+                        className={`bg-muted border-none h-6 flex items-center gap-1 cursor-pointer hover:bg-muted/80 ${isRegenerating ? 'opacity-70 cursor-default' : ''}`}
+                        onClick={handleRegenerateClick}
+                      >
+                        {isRegenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Regenerate response</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             )}
-            </Box>
+            </div>
             
           </>
         )}
@@ -491,7 +379,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {(hasReferences || references.length > 0) && message.sender === 'assistant' && (
           <DocumentReferences references={references} />
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };

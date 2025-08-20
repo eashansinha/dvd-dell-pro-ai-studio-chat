@@ -13,9 +13,9 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Box, TextField, IconButton, CircularProgress, Typography } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import StopIcon from '@mui/icons-material/Stop';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Send, Square } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppDispatch, useAppSelector, sendMessage, receiveToken, endOfStream, startSession, store, setProcessing, cancelRequest } from '../../store/store';
 import { getDB } from '../../db/db';
@@ -187,8 +187,8 @@ export const InputArea: React.FC = () => {
           }));
         }
         
-        // Start response timer for metrics
-        const startTime = Date.now();
+        // Start response timer for metrics (currently unused but kept for future metrics implementation)
+        // const _startTime = Date.now();
         
         if (useRAG) {
           console.log('===== STARTING RAG FLOW =====');
@@ -239,63 +239,35 @@ export const InputArea: React.FC = () => {
     };
   
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      padding: 2,
-      borderTop: '1px solid',
-      borderTopColor: 'divider',
-      backgroundColor: 'background.paper',
-      justifyContent: 'center',
-    }}>
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'center',
-        backgroundColor: 'background.default',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        padding: 1,
-        minWidth: '50%',
-        maxWidth: '80%',
-        margin: '0 auto'
-      }}>
-        <TextField
+    <div className="flex flex-col p-4 border-t border-border bg-background justify-center">
+      <div className="flex items-center bg-muted rounded-lg border border-border p-2 min-w-[50%] max-w-[80%] mx-auto">
+        <Textarea
           placeholder="Type a message..."
-          multiline
-          maxRows={5}
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           disabled={isProcessing}
-          inputRef={textFieldRef}
-          variant="standard"
-          fullWidth
-          sx={{
-            '& .MuiInputBase-root': {
-              padding: 1
-            },
-            '& .MuiInputBase-input': {
-              color: 'text.primary'
-            }
-          }}
+          ref={textFieldRef}
+          className="flex-1 min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+          rows={1}
         />
         
-        <IconButton 
-          color="primary"
+        <Button 
           onClick={isProcessing ? handleStop : handleSend}
           disabled={!isProcessing && !input.trim()}
-          sx={{ ml: 1 }}
+          size="icon"
+          variant="ghost"
+          className="ml-2 shrink-0"
         >
-          {isProcessing ? <StopIcon /> : <SendIcon />}
-        </IconButton>
-      </Box>
+          {isProcessing ? <Square className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+        </Button>
+      </div>
       
-      <Box className="input-footer">
-        <Typography variant="caption" color="textSecondary">
+      <div className="input-footer mt-2 text-center">
+        <p className="text-xs text-muted-foreground">
           Messages are stored locally in your browser using IndexedDB
-        </Typography>
-      </Box>
-    </Box>
+        </p>
+      </div>
+    </div>
   );
 };

@@ -13,10 +13,9 @@
  */
 
 import React from 'react';
-import { Box, Typography, Paper, Grid, Container, Fade } from '@mui/material';
-import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { endOfStream, receiveToken, store, useAppDispatch, useAppSelector, setProcessing, cancelRequest } from '../../store/store';
+import { Lightbulb, Sparkles } from 'lucide-react';
+import { Card } from '../ui/card';
+import { endOfStream, receiveToken, store, useAppDispatch, useAppSelector, setProcessing } from '../../store/store';
 import { sendMessage, startSession } from '../../store/store';
 import { callOpenAICompletion } from '../../client/openaiClient';
 import { callRAGCompletion } from '../../client/langchainClient';
@@ -166,36 +165,34 @@ export const WelcomeScreen: React.FC = () => {
   };
   
   return (
-    <Fade in={true} timeout={500}>
-      <Container maxWidth="md" className="welcome-container">
-        <Box className="welcome-screen">
-          <Typography variant="h2" className="welcome-main-title">
-            <AutoAwesomeIcon fontSize="large" className="title-icon" sx={{ color: 'primary.main', mr: 2 }} />
-            Dell Pro AI Studio Chat
-          </Typography>
-          
-          <Typography variant="h4" className="welcome-subtitle" sx={{ color: 'text.secondary', margin: 4 }}>
-            How can I help you today?
-          </Typography>
-          
-          <Grid container spacing={2} className="example-queries-container">
-            {EXAMPLE_QUERIES.map((query, index) => (
-              <Grid item xs={12} sm={6} key={index}>
-                <Paper 
-                  className="example-query" 
-                  elevation={0}
-                  onClick={() => handleQueryClick(query)}
-                >
-                  <LightbulbIcon fontSize="small" className="query-icon" />
-                  <Typography variant="body1">
-                    {query}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      </Container>
-    </Fade>
+    <div className="welcome-container max-w-4xl mx-auto animate-in fade-in duration-500">
+      <div className="welcome-screen">
+        <h1 className="welcome-main-title text-4xl font-bold text-center mb-8 flex items-center justify-center">
+          <Sparkles className="text-primary mr-4 h-10 w-10" />
+          Dell Pro AI Studio Chat
+        </h1>
+        
+        <h2 className="welcome-subtitle text-2xl text-muted-foreground text-center mb-16">
+          How can I help you today?
+        </h2>
+        
+        <div className="example-queries-container grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {EXAMPLE_QUERIES.map((query, index) => (
+            <Card 
+              key={index}
+              className="example-query cursor-pointer p-4 hover:bg-accent/50 transition-colors border-0 shadow-sm"
+              onClick={() => handleQueryClick(query)}
+            >
+              <div className="flex items-start gap-3">
+                <Lightbulb className="query-icon h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                <p className="text-sm leading-relaxed">
+                  {query}
+                </p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };

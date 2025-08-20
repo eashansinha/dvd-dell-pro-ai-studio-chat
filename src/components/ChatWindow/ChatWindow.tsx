@@ -13,7 +13,6 @@
  */
 
 import React from 'react';
-import { List, ListItem, ListItemText, Box, Typography } from '@mui/material';
 import { MessageDocType } from '../../db/types';
 
 interface ChatWindowProps {
@@ -24,40 +23,33 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isThinking, thinkingTokens }) => {
   return (
-    <Box sx={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
-      <List>
+    <div className="w-full h-full overflow-y-auto flex flex-col p-4">
+      <div className="space-y-2">
         {messages.map((msg) => (
-          <ListItem key={msg.id} sx={{ justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-            <ListItemText
-              primary={
-                <Box
-                  sx={{
-                    bgcolor: msg.sender === 'user' ? 'primary.main' : 'grey.300',
-                    color: msg.sender === 'user' ? 'primary.contrastText' : 'black',
-                    borderRadius: 2,
-                    p: 1,
-                    maxWidth: '60%',
-                    display: 'inline-block',
-                  }}
-                >
-                  {msg.text}
-                </Box>
-              }
-            />
-          </ListItem>
+          <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              className={`inline-block rounded-lg p-2 max-w-[60%] ${
+                msg.sender === 'user' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-gray-300 text-black'
+              }`}
+            >
+              {msg.text}
+            </div>
+          </div>
         ))}
-      </List>
+      </div>
 
       {isThinking && (
-        <Box sx={{ mt: 'auto', borderTop: '1px solid #ccc', pt: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary">
+        <div className="mt-auto border-t border-gray-300 pt-4">
+          <p className="text-sm text-muted-foreground">
             Thinking...
-          </Typography>
-          <Box sx={{ backgroundColor: '#f0f0f0', p: 1, mt: 1 }}>
+          </p>
+          <div className="bg-gray-100 p-2 mt-2 rounded">
             {thinkingTokens}
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };

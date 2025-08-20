@@ -13,35 +13,38 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  TextField,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Chip,
-  Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Tooltip,
-  Autocomplete,
-  Menu,
-  MenuItem,
-  LinearProgress
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import FolderIcon from '@mui/icons-material/Folder';
-import ChatIcon from '@mui/icons-material/Chat';
-import TagIcon from '@mui/icons-material/Tag';
+import { 
+  Folder, 
+  Upload, 
+  Plus, 
+  Trash, 
+  MessageSquare, 
+  Search, 
+  Loader2,
+  X
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
+} from '../ui/dialog';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '../ui/dropdown-menu';
+import { List, ListItem, ListItemText } from '../ui/list';
+import { Autocomplete } from '../ui/autocomplete';
+import { Progress } from '../ui/progress';
 import { DocumentManager } from '../../services/DocumentManager';
 import { DocumentDocType } from '../../db/types';
 import { getDB } from '../../db/db';
@@ -483,198 +486,163 @@ export const DocumentLibrary: React.FC = () => {
   };
   
   return (
-    <Box className="document-library" sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden'
-    }}>
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        marginBottom: 2,
-        gap: 1
-      }}>
+    <div className="document-library flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col justify-between mb-4 gap-2">
         <Button
-          variant="contained"
-          startIcon={<UploadFileIcon />}
+          variant="default"
+          className="w-full"
+          size="lg"
           onClick={() => setUploadDialogOpen(true)}
-          size="large"
         >
+          <Upload className="mr-2 h-4 w-4" />
           Add Local Document
         </Button>
         
-        <TextField
-          placeholder="Search documents..."
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && loadDocuments()}
-          sx={{ flexGrow: 1 }}
-        />
-      </Box>
+        <div className="relative w-full">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documents..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && loadDocuments()}
+          />
+        </div>
+      </div>
       
       {currentSessionId && (
-        <Box className="session-tags">
-          <Typography variant="subtitle2">
+        <div className="session-tags">
+          <h3 className="text-sm font-medium mb-2">
             Current Chat References:
-          </Typography>
+          </h3>
           
           {currentSessionTags.length === 0 ? (
-            <Typography variant="body2" color="textSecondary">
+            <p className="text-sm text-muted-foreground">
               No document references added
-            </Typography>
+            </p>
           ) : (
             <>
               {/* Direct document references */}
               {getReferencedDocuments().length > 0 && (
-                <Box className="referenced-documents">
-                  <Typography variant="body2" sx={{ mt: 1, mb: 0.5 }}>
+                <div className="referenced-documents">
+                  <p className="text-sm mt-2 mb-1">
                     Documents:
-                  </Typography>
-                  <Box className="tag-chips">
+                  </p>
+                  <div className="tag-chips flex flex-wrap gap-1">
                     {getReferencedDocuments().map(doc => (
-                      <Chip
+                      <Badge
                         key={`doc-${doc.id}`}
-                        label={doc.metadata.filename}
-                        onDelete={() => removeDocumentFromChat(doc.id)}
-                        size="small"
-                        color="secondary"
-                        icon={<FolderIcon fontSize="small" />}
-                        sx={{ fontWeight: 'medium' }}
-                      />
+                        variant="secondary"
+                        className="font-medium flex items-center gap-1 pr-1"
+                      >
+                        <Folder className="h-3 w-3 mr-1" />
+                        {doc.metadata.filename}
+                        <button 
+                          className="ml-1 rounded-full hover:bg-secondary-foreground/10"
+                          onClick={() => removeDocumentFromChat(doc.id)}
+                        >
+                          <Trash className="h-3 w-3" />
+                        </button>
+                      </Badge>
                     ))}
-                  </Box>
-                </Box>
+                  </div>
+                </div>
               )}
               
               {/* Tags */}
               {getRegularTags().length > 0 && (
-                <Box className="tag-references">
-                  <Typography variant="body2" sx={{ mt: 1, mb: 0.5 }}>
+                <div className="tag-references">
+                  <p className="text-sm mt-2 mb-1">
                     Tags:
-                  </Typography>
-                  <Box className="tag-chips">
+                  </p>
+                  <div className="tag-chips flex flex-wrap gap-1">
                     {getRegularTags().map(tag => (
-                      <Chip
+                      <Badge
                         key={tag}
-                        label={tag}
-                        onDelete={() => handleRemoveTagFromSession(tag)}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
+                        variant="outline"
+                        className="flex items-center gap-1 pr-1"
                         onContextMenu={(e) => handleTagContextMenu(e, tag)}
-                      />
+                      >
+                        {tag}
+                        <button 
+                          className="ml-1 rounded-full hover:bg-muted"
+                          onClick={() => handleRemoveTagFromSession(tag)}
+                        >
+                          <Trash className="h-3 w-3" />
+                        </button>
+                      </Badge>
                     ))}
-                  </Box>
-                </Box>
+                  </div>
+                </div>
               )}
             </>
           )}
           
-          <Autocomplete
-            size="small"
-            options={allTags.filter(tag => !currentSessionTags.includes(tag))}
-            renderInput={(params) => (
-              <TextField 
-                {...params} 
-                placeholder="Add tag reference..." 
-                size="small"
-                variant="outlined"
-              />
-            )}
-            onChange={(_, value) => value && handleAddTagToSession(value)}
-            className="tag-autocomplete"
-          />
-        </Box>
+          <div className="mt-2">
+            <Autocomplete
+              options={allTags.filter(tag => !currentSessionTags.includes(tag))}
+              onChange={(value) => value && handleAddTagToSession(value)}
+              placeholder="Add tag reference..."
+              className="tag-autocomplete"
+              size="sm"
+            />
+          </div>
+        </div>
       )}
       
-      <Divider sx={{ my: 1 }} />
+      <Separator className="my-2" />
       
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+      <h3 className="text-sm font-medium mb-2">
         Your Documents
-      </Typography>
+      </h3>
       
       {loading ? (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          padding: 2 
-        }}>
-          <CircularProgress size={24} />
-        </Box>
+        <div className="flex justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
       ) : documents.length === 0 ? (
-        <Typography 
-          variant="body2" 
-          color="textSecondary" 
-          sx={{ py: 2, textAlign: 'center' }}
-        >
+        <p className="py-4 text-center text-sm text-muted-foreground">
           No documents found
-        </Typography>
+        </p>
       ) : (
-        <List sx={{ overflowY: 'auto', flexGrow: 1 }}>
+        <List className="overflow-y-auto flex-grow">
           {documents.map(doc => (
             <ListItem
               key={doc.id}
-              component="div"
+              className={`mb-1 rounded-md transition-colors duration-200 relative ${
+                isDocumentInCurrentChat(doc) && !isDocumentDirectlyReferenced(doc.id) 
+                  ? 'bg-primary/10 border-l-4 border-primary' 
+                  : isDocumentDirectlyReferenced(doc.id)
+                    ? 'bg-secondary/10 border-l-4 border-secondary'
+                    : ''
+              }`}
               onClick={() => setViewDocument(doc)}
               onContextMenu={(e) => handleContextMenu(e, doc.id)}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                transition: 'background-color 0.2s ease',
-                position: 'relative',
-                ...(isDocumentInCurrentChat(doc) && !isDocumentDirectlyReferenced(doc.id) && {
-                  bgcolor: 'rgba(var(--primary-color-rgb), 0.08)',
-                  borderLeft: '3px solid',
-                  borderLeftColor: 'primary.main',
-                }),
-                ...(isDocumentDirectlyReferenced(doc.id) && {
-                  bgcolor: 'rgba(var(--secondary-color-rgb), 0.08)',
-                  borderLeft: '3px solid',
-                  borderLeftColor: 'secondary.main',
-                })
-              }}
             >
-              <FolderIcon sx={{ 
-                mr: 1, 
-                color: theme => theme.palette.mode === 'dark' ? '#999' : '#757575' 
-              }} />
+              <Folder className="mr-2 h-5 w-5 text-muted-foreground" />
               <ListItemText
                 primary={doc.metadata.filename}
                 secondary={
-                  <Box component="div">
-                    <Typography variant="caption" component="span">
+                  <div>
+                    <span className="text-xs text-muted-foreground">
                       {formatDate(doc.metadata.uploadDate)} · {formatSize(doc.metadata.size)}
                       {isDocumentDirectlyReferenced(doc.id) && currentSessionId && (
-                        <Typography 
-                          component="span" 
-                          variant="caption" 
-                          color="secondary" 
-                          sx={{ ml: 1, fontWeight: 'bold' }}
-                        >
+                        <span className="ml-1 text-xs font-bold text-secondary">
                           • Direct reference
-                        </Typography>
+                        </span>
                       )}
                       {isDocumentInCurrentChat(doc) && !isDocumentDirectlyReferenced(doc.id) && currentSessionId && (
-                        <Typography 
-                          component="span" 
-                          variant="caption" 
-                          color="primary" 
-                          sx={{ ml: 1, fontWeight: 'bold' }}
-                        >
+                        <span className="ml-1 text-xs font-bold text-primary">
                           • Via tags
-                        </Typography>
+                        </span>
                       )}
-                    </Typography>
-                    <Box className="document-item-tags">
+                    </span>
+                    <div className="document-item-tags flex flex-wrap gap-1 mt-1">
                       {doc.metadata.tags.slice(0, 3).map(tag => (
-                        <Chip
+                        <Badge
                           key={tag}
-                          label={tag}
-                          size="small"
-                          className="document-tag"
+                          variant="outline"
+                          className="document-tag text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (currentSessionId && !currentSessionTags.includes(tag)) {
@@ -682,41 +650,46 @@ export const DocumentLibrary: React.FC = () => {
                             }
                           }}
                           onContextMenu={(e) => handleTagContextMenu(e, tag)}
-                        />
+                        >
+                          {tag}
+                        </Badge>
                       ))}
                       {doc.metadata.tags.length > 3 && (
-                        <Chip
-                          label={`+${doc.metadata.tags.length - 3}`}
-                          size="small"
-                          className="document-tag"
-                        />
+                        <Badge
+                          variant="outline"
+                          className="document-tag text-xs"
+                        >
+                          +{doc.metadata.tags.length - 3}
+                        </Badge>
                       )}
-                    </Box>
-                  </Box>
+                    </div>
+                  </div>
                 }
               />
               {currentSessionId && (
-                <Box className="document-actions" onClick={(e) => e.stopPropagation()}>
+                <div className="document-actions" onClick={(e) => e.stopPropagation()}>
                   {isDocumentDirectlyReferenced(doc.id) ? (
-                    <IconButton 
-                      size="small" 
-                      color="secondary"
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8 text-secondary"
                       onClick={() => removeDocumentFromChat(doc.id)}
                       title="Remove from chat"
                     >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                      <Trash className="h-4 w-4" />
+                    </Button>
                   ) : (
-                    <IconButton 
-                      size="small" 
-                      color="primary"
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8 text-primary"
                       onClick={() => addDocumentToCurrentChat(doc.id)}
                       title="Add to current chat"
                     >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   )}
-                </Box>
+                </div>
               )}
             </ListItem>
           ))}
@@ -724,318 +697,329 @@ export const DocumentLibrary: React.FC = () => {
       )}
       
       {/* Upload Dialog */}
-      <Dialog
-        open={uploadDialogOpen}
-        onClose={() => setUploadDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add Local Document</DialogTitle>
-        <DialogContent>
-          <Box className="upload-content">
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Local Document</DialogTitle>
+          </DialogHeader>
+          <div className="upload-content space-y-4">
             <Button
-              variant="outlined"
-              component="label"
-              startIcon={<UploadFileIcon />}
-              className="file-select-button"
+              variant="outline"
+              className="file-select-button w-full"
+              asChild
             >
-              Select File
-              <input
-                type="file"
-                hidden
-                onChange={handleFileChange}
-                accept=".txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.md,.js,.ts,.py,.java,.html,.css,.json,.xml"
-              />
+              <label>
+                <Upload className="mr-2 h-4 w-4" />
+                Select File
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleFileChange}
+                  accept=".txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.md,.js,.ts,.py,.java,.html,.css,.json,.xml"
+                />
+              </label>
             </Button>
             
             {selectedFile && (
-              <Typography variant="body2" className="selected-file">
+              <p className="text-sm text-muted-foreground selected-file">
                 Selected: {selectedFile.name} ({formatSize(selectedFile.size)})
-              </Typography>
+              </p>
             )}
             
-            <Typography variant="subtitle2" className="tags-heading">
+            <h4 className="text-sm font-medium tags-heading">
               Add Tags
-            </Typography>
+            </h4>
             
-            <Box className="tag-input">
-              <TextField
-                size="small"
+            <div className="tag-input flex gap-2">
+              <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
                 placeholder="Enter tag name"
-                className="tag-field"
+                className="tag-field flex-1"
               />
               <Button
-                variant="outlined"
-                size="small"
+                variant="outline"
+                size="sm"
                 onClick={handleAddTag}
                 disabled={!newTag}
               >
                 Add
               </Button>
-            </Box>
+            </div>
             
-            <Box className="upload-tags">
+            <div className="upload-tags flex flex-wrap gap-1">
               {uploadTags.map(tag => (
-                <Chip
+                <Badge
                   key={tag}
-                  label={tag}
-                  onDelete={() => handleRemoveTag(tag)}
-                  size="small"
-                  className="upload-tag"
-                />
+                  variant="secondary"
+                  className="upload-tag flex items-center gap-1 pr-1"
+                >
+                  {tag}
+                  <button 
+                    className="ml-1 rounded-full hover:bg-secondary-foreground/10"
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
               ))}
-            </Box>
+            </div>
             
             {/* Embedding Progress Section */}
             {embeddingProgress && (
-              <Box className="embedding-progress-container">
-                <Box className="progress-header">
-                  <Typography variant="body2">
-                    <span className="chunk-pulse"></span>
+              <div className="embedding-progress-container space-y-2">
+                <div className="progress-header flex justify-between">
+                  <p className="text-sm">
+                    <span className="chunk-pulse inline-block w-2 h-2 bg-primary rounded-full animate-pulse mr-2"></span>
                     Processing {embeddingProgress.currentFile}
-                  </Typography>
-                  <Typography variant="body2">
+                  </p>
+                  <p className="text-sm">
                     {embeddingProgress.processedChunks}/{embeddingProgress.totalChunks} chunks
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
                 
-                <Box className="progress-bar-wrapper">
-                  <Box 
-                    className="progress-bar"
-                    sx={{ 
-                      width: embeddingProgress.totalChunks > 0 
-                        ? `${(embeddingProgress.processedChunks / embeddingProgress.totalChunks) * 100}%` 
-                        : '0%' 
-                    }}
-                  />
-                </Box>
+                <Progress 
+                  value={embeddingProgress.totalChunks > 0 
+                    ? (embeddingProgress.processedChunks / embeddingProgress.totalChunks) * 100 
+                    : 0
+                  }
+                  className="w-full"
+                />
                 
-                <Box className="progress-stats">
-                  <Typography variant="caption">
+                <div className="progress-stats flex justify-between text-xs text-muted-foreground">
+                  <span>
                     Time elapsed: {formatTime(embeddingProgress.elapsedTime)}
-                  </Typography>
+                  </span>
                   
-                  <Typography variant="caption">
+                  <span>
                     {embeddingProgress.chunkProcessingRate.toFixed(1)} chunks/sec
-                  </Typography>
+                  </span>
                   
-                  <Typography variant="caption">
+                  <span>
                     Est. remaining: {formatTime(embeddingProgress.estimatedTimeRemaining)}
-                  </Typography>
-                </Box>
-              </Box>
+                  </span>
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || uploading}
+            >
+              {uploading && !embeddingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {uploading ? 'Embedding Document...' : 'Add'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleUpload}
-            disabled={!selectedFile || uploading}
-            startIcon={uploading && !embeddingProgress ? <CircularProgress size={20} /> : null}
-          >
-            {uploading ? 'Embedding Document...' : 'Add'}
-          </Button>
-        </DialogActions>
       </Dialog>
       
       {/* View Document Dialog */}
-      <Dialog
-        open={viewDocument !== null}
-        onClose={() => setViewDocument(null)}
-        maxWidth="md"
-        fullWidth
-      >
-        {viewDocument && (
-          <>
-            <DialogTitle>
-              {viewDocument.metadata.filename}
-              <Typography variant="body2" color="textSecondary">
-                {formatDate(viewDocument.metadata.uploadDate)} · {formatSize(viewDocument.metadata.size)}
-              </Typography>
-            </DialogTitle>
-            <DialogContent dividers>
-              <Box className="document-tags-header">
-                {viewDocument.metadata.tags.map(tag => (
-                  <Tooltip 
-                    title={currentSessionId ? (
-                      currentSessionTags.includes(tag) 
-                        ? "Remove from current chat" 
-                        : "Add to current chat"
-                    ) : "Right click to chat with this tag"}
-                    key={tag}
-                  >
-                    <Chip
-                      label={tag}
-                      size="small"
-                      className={`view-tag ${currentSessionTags.includes(tag) ? 'active-tag' : ''}`}
+      <Dialog open={viewDocument !== null} onOpenChange={(open) => !open && setViewDocument(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          {viewDocument && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{viewDocument.metadata.filename}</DialogTitle>
+                <DialogDescription>
+                  {formatDate(viewDocument.metadata.uploadDate)} · {formatSize(viewDocument.metadata.size)}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto">
+                <div className="document-tags-header mb-4 flex flex-wrap gap-1">
+                  <TooltipProvider>
+                    {viewDocument.metadata.tags.map(tag => (
+                      <Tooltip 
+                        key={tag}
+                      >
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant={currentSessionTags.includes(tag) ? "default" : "outline"}
+                            className={`view-tag cursor-pointer ${currentSessionTags.includes(tag) ? 'active-tag' : ''}`}
+                            onClick={() => {
+                              if (!currentSessionId) return;
+                              
+                              if (currentSessionTags.includes(tag)) {
+                                handleRemoveTagFromSession(tag);
+                              } else {
+                                handleAddTagToSession(tag);
+                              }
+                            }}
+                            onContextMenu={(e) => handleTagContextMenu(e, tag)}
+                          >
+                            {tag}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {currentSessionId ? (
+                            currentSessionTags.includes(tag) 
+                              ? "Remove from current chat" 
+                              : "Add to current chat"
+                          ) : "Right click to chat with this tag"}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </TooltipProvider>
+                </div>
+                <div className="document-preview">
+                  <pre className="whitespace-pre-wrap text-sm">{viewDocument.content}</pre>
+                </div>
+              </div>
+              <DialogFooter className="flex-wrap gap-2">
+                {currentSessionId && (
+                  isDocumentDirectlyReferenced(viewDocument.id) ? (
+                    <Button
+                      variant="outline"
                       onClick={() => {
-                        if (!currentSessionId) return;
-                        
-                        if (currentSessionTags.includes(tag)) {
-                          handleRemoveTagFromSession(tag);
-                        } else {
-                          handleAddTagToSession(tag);
-                        }
+                        removeDocumentFromChat(viewDocument.id);
                       }}
-                      onContextMenu={(e) => handleTagContextMenu(e, tag)}
-                    />
-                  </Tooltip>
-                ))}
-              </Box>
-              <Box className="document-preview">
-                <pre>{viewDocument.content}</pre>
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              {currentSessionId && (
-                isDocumentDirectlyReferenced(viewDocument.id) ? (
-                  <Button
-                    startIcon={<DeleteIcon />}
-                    color="secondary"
-                    onClick={() => {
-                      removeDocumentFromChat(viewDocument.id);
-                    }}
-                  >
-                    Remove from current chat
-                  </Button>
-                ) : (
-                  <Button
-                    startIcon={<AddIcon />}
-                    color="primary"
-                    onClick={() => {
-                      addDocumentToCurrentChat(viewDocument.id);
-                    }}
-                  >
-                    Add to current chat
-                  </Button>
-                )
-              )}
-              <Button 
-                startIcon={<ChatIcon />}
-                color="primary"
-                onClick={() => {
-                  startChatWithDocument(viewDocument.id);
-                  setViewDocument(null);
-                }}
-              >
-                Start new chat with document
-              </Button>
-              <Button onClick={() => setViewDocument(null)}>Close</Button>
-            </DialogActions>
-          </>
-        )}
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      Remove from current chat
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        addDocumentToCurrentChat(viewDocument.id);
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add to current chat
+                    </Button>
+                  )
+                )}
+                <Button 
+                  onClick={() => {
+                    startChatWithDocument(viewDocument.id);
+                    setViewDocument(null);
+                  }}
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Start new chat with document
+                </Button>
+                <Button variant="outline" onClick={() => setViewDocument(null)}>Close</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
       
       {/* Document Context Menu */}
-      <Menu
-        open={contextMenu !== null}
-        onClose={handleCloseContextMenu}
-        anchorReference="anchorPosition"
-        anchorPosition={
-          contextMenu !== null
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : undefined
-        }
-      >
-        {currentSessionId && contextMenu?.docId && (
-          isDocumentDirectlyReferenced(contextMenu.docId) ? (
-            <MenuItem 
-              onClick={() => {
-                removeDocumentFromChat(contextMenu.docId!);
+      <DropdownMenu open={contextMenu !== null} onOpenChange={(open) => !open && handleCloseContextMenu()}>
+        <DropdownMenuTrigger asChild>
+          <div 
+            style={{
+              position: 'fixed',
+              top: contextMenu?.mouseY || 0,
+              left: contextMenu?.mouseX || 0,
+              width: 1,
+              height: 1,
+              pointerEvents: 'none'
+            }}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {currentSessionId && contextMenu?.docId && (
+            isDocumentDirectlyReferenced(contextMenu.docId) ? (
+              <DropdownMenuItem 
+                onClick={() => {
+                  removeDocumentFromChat(contextMenu.docId!);
+                  handleCloseContextMenu();
+                }}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Remove from current chat
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem 
+                onClick={() => {
+                  addDocumentToCurrentChat(contextMenu.docId!);
+                  handleCloseContextMenu();
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add to current chat
+              </DropdownMenuItem>
+            )
+          )}
+          <DropdownMenuItem 
+            onClick={() => {
+              if (contextMenu?.docId) {
+                startChatWithDocument(contextMenu.docId);
                 handleCloseContextMenu();
-              }}
-            >
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-              Remove from current chat
-            </MenuItem>
-          ) : (
-            <MenuItem 
-              onClick={() => {
-                addDocumentToCurrentChat(contextMenu.docId!);
+              }
+            }}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Start new chat with document
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => {
+              if (contextMenu?.docId) {
+                setConfirmDeleteId(contextMenu.docId);
                 handleCloseContextMenu();
-              }}
-            >
-              <AddIcon fontSize="small" sx={{ mr: 1 }} />
-              Add to current chat
-            </MenuItem>
-          )
-        )}
-        <MenuItem 
-          onClick={() => {
-            if (contextMenu?.docId) {
-              startChatWithDocument(contextMenu.docId);
-              handleCloseContextMenu();
-            }
-          }}
-        >
-          <ChatIcon fontSize="small" sx={{ mr: 1 }} />
-          Start new chat with document
-        </MenuItem>
-        <MenuItem 
-          onClick={() => {
-            if (contextMenu?.docId) {
-              setConfirmDeleteId(contextMenu.docId);
-              handleCloseContextMenu();
-            }
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          Delete
-        </MenuItem>
-      </Menu>
+              }
+            }}
+            className="text-destructive"
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       
       {/* Tag Context Menu */}
-      <Menu
-        open={tagContextMenu !== null}
-        onClose={handleCloseTagContextMenu}
-        anchorReference="anchorPosition"
-        anchorPosition={
-          tagContextMenu !== null
-            ? { top: tagContextMenu.mouseY, left: tagContextMenu.mouseX }
-            : undefined
-        }
-      >
-        <MenuItem 
-          onClick={() => {
-            if (tagContextMenu?.tag) {
-              startChatWithTag(tagContextMenu.tag);
-              handleCloseTagContextMenu();
-            }
-          }}
-        >
-          <ChatIcon fontSize="small" sx={{ mr: 1 }} />
-          Start new chat with tag
-        </MenuItem>
-      </Menu>
+      <DropdownMenu open={tagContextMenu !== null} onOpenChange={(open) => !open && handleCloseTagContextMenu()}>
+        <DropdownMenuTrigger asChild>
+          <div 
+            style={{
+              position: 'fixed',
+              top: tagContextMenu?.mouseY || 0,
+              left: tagContextMenu?.mouseX || 0,
+              width: 1,
+              height: 1,
+              pointerEvents: 'none'
+            }}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem 
+            onClick={() => {
+              if (tagContextMenu?.tag) {
+                startChatWithTag(tagContextMenu.tag);
+                handleCloseTagContextMenu();
+              }
+            }}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Start new chat with tag
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       
       {/* Confirm Delete Dialog */}
-      <Dialog
-        open={confirmDeleteId !== null}
-        onClose={() => setConfirmDeleteId(null)}
-      >
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={confirmDeleteId !== null} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete this document? This action cannot be undone.
-          </Typography>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+            <Button 
+              variant="destructive"
+              onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-          <Button 
-            onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
-}; 
+};         

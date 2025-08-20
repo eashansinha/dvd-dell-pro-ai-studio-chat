@@ -14,18 +14,15 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Provider } from 'react-redux';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { store, loadSession, startSession } from './store/store';
 import { getDB } from './db/db';
 import { Layout } from './components/Layout/Layout';
 import { v4 as uuidv4 } from 'uuid';
 import type { MessageDocType } from './db/types';
 import { Settings, AppSettings } from './components/Settings/Settings';
-import { createThemeOptions, DEFAULT_THEMES } from './theme/themeConfig';
+import { applyTheme, DEFAULT_THEMES } from './theme/themeConfig';
 import { SettingsProvider } from './context/SettingsContext';
 import { OfflineProvider } from './context/OfflineContext';
-import { Box } from '@mui/material';
 import { ModelService } from './services/ModelService';
 import { getSettings, saveSettings } from './utils/settings';
 import { isMobileDevice } from './utils/deviceDetection';
@@ -49,14 +46,14 @@ export const ChatApp: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Create a theme instance based on selected theme
-  const theme = createTheme(
-    createThemeOptions(
-      settings.selectedTheme === 'custom' && settings.customTheme 
-        ? settings.customTheme 
-        : (DEFAULT_THEMES as any)[settings.selectedTheme] || DEFAULT_THEMES.light
-    )
-  );
+  // Apply theme based on selected theme
+  useEffect(() => {
+    const themeConfig = settings.selectedTheme === 'custom' && settings.customTheme 
+      ? settings.customTheme 
+      : (DEFAULT_THEMES as any)[settings.selectedTheme] || DEFAULT_THEMES.light;
+    
+    applyTheme(themeConfig);
+  }, [settings.selectedTheme, settings.customTheme]);
 
   // Check if mobile on mount and window resize
   useEffect(() => {
@@ -184,30 +181,22 @@ export const ChatApp: React.FC = () => {
 
   // Show mobile landing if on mobile device
   if (isMobile) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <MobileLanding />
-      </ThemeProvider>
-    );
+    return <MobileLanding />;
   }
 
   return (
     <SettingsProvider>
       <OfflineProvider>
         <Provider store={store}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box className="chat-container">
-              <Layout onOpenSettings={() => setSettingsOpen(true)} />
-              <Settings
-                open={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-                onSave={handleSaveSettings}
-                currentSettings={settings}
-              />
-            </Box>
-          </ThemeProvider>
+          <div className="chat-container">
+            <Layout onOpenSettings={() => setSettingsOpen(true)} />
+            <Settings
+              open={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+              onSave={handleSaveSettings}
+              currentSettings={settings}
+            />
+          </div>
         </Provider>
       </OfflineProvider>
     </SettingsProvider>
