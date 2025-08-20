@@ -12,8 +12,16 @@
  * limitations under the License.
  */
 
+/**
+ * Theme configuration module for Material-UI theme customization
+ * Provides theme interfaces, default themes, and theme creation utilities
+ */
+
 import { ThemeOptions, PaletteMode } from '@mui/material';
 
+/**
+ * Configuration interface for custom theme settings
+ */
 export interface ThemeConfig {
   mode: PaletteMode;
   primary: string;
@@ -24,7 +32,9 @@ export interface ThemeConfig {
   accent: string;
 }
 
-// Default themes
+/**
+ * Default theme configurations for light, dark, and OLED modes
+ */
 export const DEFAULT_THEMES = {
   light: {
     mode: 'light',
@@ -57,9 +67,17 @@ export const DEFAULT_THEMES = {
   } as ThemeConfig
 };
 
-// Convert ThemeConfig to MUI ThemeOptions
+/**
+ * Convert ThemeConfig to Material-UI ThemeOptions with CSS variable injection
+ * @param config - Theme configuration object
+ * @returns Material-UI ThemeOptions object
+ */
 export function createThemeOptions(config: ThemeConfig): ThemeOptions {
-  // Helper to convert hex to rgb
+  /**
+   * Helper function to convert hex color to RGB values
+   * @param hex - Hex color string (e.g., "#ff0000")
+   * @returns RGB values as comma-separated string
+   */
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result 
@@ -67,7 +85,7 @@ export function createThemeOptions(config: ThemeConfig): ThemeOptions {
       : '0, 0, 0';
   };
 
-  // Inject CSS variables into document root
+  // Inject CSS custom properties into document root for dynamic theming
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
     root.style.setProperty('--primary-color', config.primary);

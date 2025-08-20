@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * API Settings component for configuring LLM and backend API endpoints
+ * Provides interface for setting API keys, URLs, model IDs, and streaming preferences
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -30,6 +35,10 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useSettings } from '../../context/SettingsContext';
 
+/**
+ * API Settings component for managing API configuration
+ * @returns JSX element containing API settings form
+ */
 const APISettings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   
@@ -48,6 +57,9 @@ const APISettings: React.FC = () => {
     };
   }, []);
   
+  /**
+   * Save current settings to context and localStorage
+   */
   const saveSettings = () => {
     updateSettings({
       apiKey,
@@ -59,30 +71,57 @@ const APISettings: React.FC = () => {
     });
   };
   
+  /**
+   * Handle API key input changes
+   * @param e - Input change event
+   */
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setApiKey(e.target.value);
   };
   
+  /**
+   * Handle API base URL input changes
+   * @param e - Input change event
+   */
   const handleApiBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setApiBaseUrl(e.target.value);
   };
   
+  /**
+   * Handle backend API URL input changes
+   * @param e - Input change event
+   */
   const handleBackendApiUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBackendApiUrl(e.target.value);
   };
   
+  /**
+   * Handle model ID input changes
+   * @param e - Input change event
+   */
   const handleModelIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setModelId(e.target.value);
   };
   
+  /**
+   * Handle embeddings model input changes
+   * @param e - Input change event
+   */
   const handleEmbeddingsModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmbeddingsModel(e.target.value);
   };
   
+  /**
+   * Toggle API key visibility in the input field
+   */
   const handleToggleApiKeyVisibility = () => {
     setShowApiKey(!showApiKey);
   };
   
+  /**
+   * Handle streaming toggle changes
+   * @param e - Checkbox change event
+   */
   const handleStreamingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStreamingEnabled(e.target.checked);
   };
@@ -216,4 +255,4 @@ const APISettings: React.FC = () => {
   );
 };
 
-export default APISettings; 
+export default APISettings;  

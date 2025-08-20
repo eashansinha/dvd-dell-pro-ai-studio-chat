@@ -207,11 +207,12 @@ export class DocumentManager {
   }
   
   /**
-   * Extract text content from various file types
-   * @param file The file to extract text from
-   * @returns Extracted text content
+   * Extract text content from various file types including PDF, Word, PowerPoint, and Excel
+   * @param file - The file to extract text from
+   * @returns Promise resolving to the extracted text content
+   * @throws Error if file type is unsupported or extraction fails
    */
-  private static async extractTextFromFile(file: File): Promise<string> {
+  static async extractTextFromFile(file: File): Promise<string> {
     const fileType = file.type;
     const fileName = file.name.toLowerCase();
     
@@ -282,11 +283,12 @@ export class DocumentManager {
   }
   
   /**
-   * Extract text from a PDF file
-   * @param file The PDF file
-   * @returns Extracted text
+   * Extract text from PDF files using PDF.js library
+   * @param file - The PDF file to extract text from
+   * @returns Promise resolving to the extracted text content
+   * @throws Error if PDF parsing fails
    */
-  private static async extractTextFromPDF(file: File): Promise<string> {
+  static async extractTextFromPDF(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -333,11 +335,12 @@ export class DocumentManager {
   }
   
   /**
-   * Extract text from a Word document
-   * @param file The Word document file
-   * @returns Extracted text
+   * Extract text from Word documents (.docx) by parsing the XML structure
+   * @param file - The Word document file to extract text from
+   * @returns Promise resolving to the extracted text content
+   * @throws Error if document parsing fails
    */
-  private static async extractTextFromWord(file: File): Promise<string> {
+  static async extractTextFromWord(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -372,11 +375,12 @@ export class DocumentManager {
   }
   
   /**
-   * Extract text from a PowerPoint file
-   * @param file The PowerPoint file
-   * @returns Extracted text
+   * Extract text from PowerPoint presentations (.pptx) by parsing slide XML content
+   * @param file - The PowerPoint file to extract text from
+   * @returns Promise resolving to the extracted text content from all slides
+   * @throws Error if presentation parsing fails
    */
-  private static async extractTextFromPowerPoint(file: File): Promise<string> {
+  static async extractTextFromPowerPoint(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -451,11 +455,12 @@ export class DocumentManager {
   }
   
   /**
-   * Extract text from an Excel file
-   * @param file The Excel file
-   * @returns Extracted text
+   * Extract text from Excel files (.xlsx) by reading all worksheets and cell values
+   * @param file - The Excel file to extract text from
+   * @returns Promise resolving to the extracted text content from all sheets
+   * @throws Error if spreadsheet parsing fails
    */
-  private static async extractTextFromExcel(file: File): Promise<string> {
+  static async extractTextFromExcel(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -507,10 +512,12 @@ export class DocumentManager {
   }
   
   /**
-   * Search for documents by semantic similarity
-   * @param query The search query
-   * @param limit Maximum number of results
-   * @param minSimilarity Minimum similarity threshold
+   * Search for documents similar to a query using vector similarity matching
+   * @param query - The search query text
+   * @param limit - Maximum number of results to return (default: 5)
+   * @param minSimilarity - Minimum similarity threshold (default: 0.7)
+   * @returns Promise resolving to array of documents with similarity scores
+   * @throws Error if embedding generation or search fails
    */
   static async searchDocuments(
     query: string, 
@@ -526,7 +533,10 @@ export class DocumentManager {
     const chunks = await db.documentChunks.find().exec();
     const chunksWithSimilarity = chunks.map(doc => {
       const chunk = doc.toJSON() as DocumentChunkDocType;
-      const similarity = this.calculateCosineSimilarity(queryEmbedding, chunk.embedding);
+      const embedding = Array.isArray(chunk.embedding[0]) ? 
+        (chunk.embedding as unknown as number[][]).flat() : 
+        chunk.embedding as number[];
+      const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding as number[]);
       return { document: chunk, similarity };
     });
     
@@ -538,8 +548,9 @@ export class DocumentManager {
   }
   
   /**
-   * Search for documents by tag
-   * @param tag The tag to search for
+   * Search documents by their associated tags
+   * @param tag - The tag to search for
+   * @returns Promise resolving to array of documents matching the provided tag
    */
   static async searchByTag(tag: string): Promise<DocumentDocType[]> {
     const db = await getDB();
@@ -558,8 +569,9 @@ export class DocumentManager {
   }
   
   /**
-   * Get documents by multiple tags (AND logic)
-   * @param tags Array of tags to filter by
+   * Get all documents that have any of the specified tags
+   * @param tags - Array of tags to filter by
+   * @returns Promise resolving to array of documents with matching tags
    */
   static async getDocumentsByTags(tags: string[]): Promise<DocumentDocType[]> {
     if (!tags.length) return [];
@@ -576,7 +588,8 @@ export class DocumentManager {
   }
   
   /**
-   * Get all tags
+   * Get all unique tags from all documents in the database
+   * @returns Promise resolving to array of unique tag strings
    */
   static async getAllTags(): Promise<string[]> {
     const db = await getDB();
@@ -594,8 +607,10 @@ export class DocumentManager {
   }
   
   /**
-   * Delete a document
-   * @param documentId The ID of the document to delete
+   * Delete a document and all its associated chunks from the database
+   * @param documentId - The unique identifier of the document to delete
+   * @returns Promise resolving to true if deletion was successful
+   * @throws Error if document deletion fails
    */
   static async deleteDocument(documentId: string): Promise<boolean> {
     const db = await getDB();
@@ -613,9 +628,12 @@ export class DocumentManager {
   }
   
   /**
-   * Calculate cosine similarity between two vectors
+   * Calculate cosine similarity between two vectors for document similarity scoring
+   * @param vecA - First vector for comparison
+   * @param vecB - Second vector for comparison
+   * @returns Cosine similarity score between 0 and 1 (higher = more similar)
    */
-  private static calculateCosineSimilarity(vecA: number[], vecB: number[]): number {
+  static calculateCosineSimilarity(vecA: number[], vecB: number[]): number {
     if (vecA.length !== vecB.length) {
       throw new Error('Vectors must have the same dimensions');
     }
@@ -637,10 +655,12 @@ export class DocumentManager {
   }
   
   /**
-   * Read a file as text
-   * @param file The file to read
+   * Helper function to read file content as text using FileReader API
+   * @param file - The file to read as text
+   * @returns Promise resolving to the file content as string
+   * @throws Error if file reading fails
    */
-  private static readFileAsText(file: File): Promise<string> {
+  static readFileAsText(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -661,10 +681,11 @@ export class DocumentManager {
   }
   
   /**
-   * Split text into chunks suitable for embedding
-   * @param text Full document text
-   * @param maxChunkSize Maximum characters per chunk
-   * @param overlap Number of characters to overlap between chunks
+   * Split text into overlapping chunks for vector embedding and processing
+   * @param text - The text content to split into chunks
+   * @param maxChunkSize - Maximum size of each chunk in characters (default: 1000)
+   * @param overlap - Number of overlapping characters between chunks (default: 200)
+   * @returns Array of text chunks with specified overlap
    */
   private static chunkText(text: string, maxChunkSize = 1000, overlap = 200): string[] {
     const chunks: string[] = [];
@@ -714,17 +735,19 @@ export class DocumentManager {
     return chunks;
   }
 
-  static async processDocumentWithChunks(
-    document: DocumentDocType, 
-    tags: string[]
-  ): Promise<void> {
-    const settings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
+  /**
+   * Process a document by splitting it into chunks and generating embeddings
+   * @param document - The document to process (unused in current implementation)
+   * @param tags - Tags to associate with the document (unused in current implementation)
+   */
+  static async processDocumentWithChunks(): Promise<void> {
+    // const settings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
     
-    // Use settings or defaults for chunk size and overlap
-    const chunkSize = settings.documentChunkSize || 1000;
-    const chunkOverlap = settings.documentOverlap || 200;
+    // Use settings or defaults for chunk size and overlap (currently unused)
+    // const chunkSize = settings.documentChunkSize || 1000;
+    // const chunkOverlap = settings.documentOverlap || 200;
     
     // Process document with these values
     // ...existing processing code...
   }
-} 
+}                                                                

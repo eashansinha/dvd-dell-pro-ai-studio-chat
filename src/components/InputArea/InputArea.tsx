@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Input area component for sending messages in the chat interface
+ * Handles user input, message sending, and RAG/standard completion flows
+ */
+
 import React, { useState, useRef } from 'react';
 import { Box, TextField, IconButton, CircularProgress, Typography } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
@@ -25,16 +30,30 @@ import { callRAGCompletion } from '../../client/langchainClient';
 import { abortControllerService } from '../../services/AbortControllerService';
 import './InputArea.css';
 
+/**
+ * Input area component providing message input and send functionality
+ * Automatically detects RAG mode based on session document tags
+ * @returns JSX element containing the input interface
+ */
 export const InputArea: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentSessionId, currentModel, isProcessing } = useAppSelector(state => state.chat);
   const [input, setInput] = useState('');
   const textFieldRef = useRef<HTMLTextAreaElement>(null);
   
+  /**
+   * Handle input text changes in the textarea
+   * @param e - Change event from the textarea element
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   };
   
+  /**
+   * Handle keyboard events in the input area
+   * Sends message on Enter key (without Shift)
+   * @param e - Keyboard event from the input element
+   */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -42,6 +61,10 @@ export const InputArea: React.FC = () => {
     }
   };
   
+  /**
+   * Handle stopping the current LLM request
+   * Cancels the ongoing completion request
+   */
   const handleStop = () => {
     console.log('Stopping LLM request');
     dispatch(cancelRequest());

@@ -12,8 +12,17 @@
  * limitations under the License.
  */
 
+/**
+ * Database helper utilities for ensuring data schema compliance
+ */
+
 import { MessageDocType } from '../db/types';
 
+/**
+ * Ensures a partial message object conforms to the complete MessageDocType schema
+ * @param message - Partial message object that may be missing required fields
+ * @returns Complete MessageDocType object with all required fields populated
+ */
 export function ensureMessageSchema(message: Partial<MessageDocType>): MessageDocType {
   return {
     id: message.id || uuidv4(),
@@ -23,4 +32,4 @@ export function ensureMessageSchema(message: Partial<MessageDocType>): MessageDo
     documentReferences: message.documentReferences || [],
     // Add other required fields with defaults
   };
-} 
+}  

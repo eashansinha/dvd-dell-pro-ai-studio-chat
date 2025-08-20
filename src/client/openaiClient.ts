@@ -12,12 +12,23 @@
  * limitations under the License.
  */
 
+/**
+ * OpenAI client for handling chat completions, text-to-speech, and text summarization
+ * Provides streaming chat functionality with thinking tag processing and audio generation
+ */
+
 import OpenAI from 'openai';
 import { DocumentReference } from '../db/types';
 import { getSettings } from '../utils/settings';
 
+/**
+ * Application settings loaded from localStorage
+ */
 const settings = getSettings();
 
+/**
+ * OpenAI client instance configured with user settings
+ */
 const openai = new OpenAI({
     apiKey: settings.apiKey,
     baseURL: settings.apiBaseUrl,
@@ -25,8 +36,14 @@ const openai = new OpenAI({
 });
 
 /**
- * Requests a streaming ChatCompletion using the new 'openai' package with
- * client.chat.completions.create. Streams partial tokens, dispatches them via callbacks.
+ * Requests a streaming ChatCompletion with thinking tag processing and token batching
+ * Handles <think> tags for internal reasoning and provides real-time streaming
+ * @param userPrompt - The user's input message
+ * @param previousMessages - Array of previous conversation messages
+ * @param modelId - OpenAI model identifier to use
+ * @param onToken - Callback function for streaming tokens
+ * @param onDone - Callback function when completion finishes
+ * @param abortSignal - Optional signal to abort the request
  */
 export async function callOpenAICompletion(
     userPrompt: string,
@@ -207,8 +224,12 @@ export async function callOpenAICompletion(
 }
 
 /**
- * Calls the OpenAI text-to-speech API to convert text to speech
- * Returns an audio blob that can be played
+ * Converts text to speech using OpenAI's text-to-speech API
+ * @param text - The text content to convert to speech
+ * @param model - TTS model to use (default: 'kokoro')
+ * @param voice - Voice identifier to use (default: 'af_jessic')
+ * @returns Promise resolving to audio blob that can be played
+ * @throws Error if TTS API request fails
  */
 export async function getTextToSpeech(text: string, model: string = 'kokoro', voice: string = 'af_jessic'): Promise<Blob> {
     try {
@@ -251,8 +272,11 @@ export async function getTextToSpeech(text: string, model: string = 'kokoro', vo
 }
 
 /**
- * Summarizes text using the OpenAI API
- * Returns a concise summary of the input text
+ * Creates a concise summary of text using OpenAI's chat completion API
+ * @param text - The text content to summarize
+ * @param modelId - OpenAI model identifier to use for summarization
+ * @returns Promise resolving to a brief, conversational summary
+ * @throws Error if summarization API request fails
  */
 export async function summarizeText(text: string, modelId: string): Promise<string> {
     try {

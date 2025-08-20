@@ -12,13 +12,21 @@
  * limitations under the License.
  */
 
+/**
+ * Title generation service for creating concise chat titles using OpenAI API
+ * Handles document search, embedding creation, and semantic similarity matching
+ */
+
 import OpenAI from 'openai';
 import { MessageDocType } from '../db/types';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 import { getDB } from '../db/db';
 import { store } from '../store/store';
 
-// Get settings from localStorage or use defaults
+/**
+ * Get API settings from localStorage or use defaults
+ * @returns Object containing API key and base URL
+ */
 const getApiSettings = () => {
   const savedSettings = localStorage.getItem('chatAppSettings');
   if (savedSettings) {
@@ -34,7 +42,10 @@ const getApiSettings = () => {
   };
 };
 
-// Create OpenAI client with settings
+/**
+ * Create OpenAI client with current settings
+ * @returns Configured OpenAI client instance
+ */
 const createClient = () => {
   const settings = getApiSettings();
   return new OpenAI({
@@ -46,6 +57,9 @@ const createClient = () => {
 
 /**
  * Generates a concise title for a chat based on the first user question and first assistant response
+ * @param messages - Array of message documents from the conversation
+ * @returns Promise resolving to a generated chat title string
+ * @throws Error if API call fails, falls back to user message or 'New Chat'
  */
 export async function generateChatTitle(messages: MessageDocType[]): Promise<string> {
   try {
@@ -193,7 +207,10 @@ export interface DocumentDocType {
 }
 
 /**
- * Create an embedding from text using OpenAI API
+ * Create an embedding from text using OpenAI API for semantic search
+ * @param text - The text content to generate embeddings for
+ * @returns Promise resolving to numerical vector embedding array
+ * @throws Error if embedding API call fails
  */
 export async function createEmbedding(text: string): Promise<number[]> {
   try {
@@ -229,7 +246,10 @@ export async function createEmbedding(text: string): Promise<number[]> {
 }
 
 /**
- * Find semantically similar document chunks
+ * Find semantically similar document chunks using vector similarity
+ * @param query - The search query text
+ * @param options - Search options including limit, similarity threshold, and tags
+ * @returns Promise resolving to array of chunks with similarity scores
  */
 export async function searchDocumentChunks(query: string, options: {
   limit?: number;
@@ -271,7 +291,10 @@ export async function searchDocumentChunks(query: string, options: {
 }
 
 /**
- * Calculate cosine similarity between two vectors
+ * Calculate cosine similarity between two vectors for document similarity scoring
+ * @param vecA - First vector for comparison
+ * @param vecB - Second vector for comparison
+ * @returns Cosine similarity score between 0 and 1 (higher = more similar)
  */
 function calculateCosineSimilarity(vecA: number[], vecB: number[]): number {
   if (vecA.length !== vecB.length) {

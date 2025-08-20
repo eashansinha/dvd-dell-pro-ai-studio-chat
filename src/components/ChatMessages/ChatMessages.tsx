@@ -12,12 +12,22 @@
  * limitations under the License.
  */
 
+/**
+ * Chat messages component for displaying conversation history with auto-scrolling
+ * Handles message rendering, thinking states, and live streaming content
+ */
+
 import React, { useRef, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { useAppSelector } from '../../store/store';
 import { MessageBubble } from '../MessageBubble/MessageBubble';
 import './ChatMessages.css';
 
+/**
+ * Chat messages container component that displays all conversation messages
+ * Automatically scrolls to bottom when new messages arrive and handles thinking states
+ * @returns JSX element containing the scrollable messages container
+ */
 export const ChatMessages: React.FC = () => {
   const { messages, isThinking, thinkingTokens } = useAppSelector(state => state.chat);
   const messagesEndRef = useRef<HTMLDivElement>(null);

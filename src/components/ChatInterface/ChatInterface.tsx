@@ -17,10 +17,15 @@ import { Sidebar } from '../Sidebar/Sidebar';
 import { Header } from '../Header/Header';
 import { ChatContent } from '../ChatContent/ChatContent';
 
+/**
+ * Main chat interface component that provides the layout structure
+ * Combines sidebar navigation with header and chat content areas
+ * @returns The complete chat interface layout
+ */
 export const ChatInterface: React.FC = () => {
     return (
         <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
-            <Sidebar />
+            <Sidebar onOpenSettings={() => {}} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <Header />
                 <ChatContent />

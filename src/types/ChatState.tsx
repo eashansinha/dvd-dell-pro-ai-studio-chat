@@ -12,11 +12,21 @@
  * limitations under the License.
  */
 
+/**
+ * Type definitions for chat state management
+ */
+
 import Message from './Message';
 
+/**
+ * Interface defining the structure of chat application state
+ */
 interface ChatState {
+    /** Whether the chat interface is currently open */
     isChatOpen: boolean;
+    /** Array of current conversation messages */
     messages: Message[];
+    /** History of previous conversation sessions */
     history: Message[][];
 }
 

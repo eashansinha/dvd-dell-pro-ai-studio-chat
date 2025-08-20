@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Welcome screen component displaying example queries and handling initial user interactions
+ * Provides quick-start functionality with predefined prompts and session management
+ */
+
 import React from 'react';
 import { Box, Typography, Paper, Grid, Container, Fade } from '@mui/material';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
@@ -26,7 +31,9 @@ import { MessageDocType, DocumentReference } from '../../db/types';
 import { v4 as uuidv4 } from 'uuid';
 import './WelcomeScreen.css';
 
-// Define example queries
+/**
+ * Predefined example queries to help users get started with the chat interface
+ */
 const EXAMPLE_QUERIES = [
   "Explain quantum computing in simple terms",
   "Write a poem about artificial intelligence",
@@ -38,10 +45,18 @@ const EXAMPLE_QUERIES = [
   "Compare and contrast SQL and NoSQL databases"
 ];
 
+/**
+ * Welcome screen component with example queries and session initialization
+ * @returns JSX element containing the welcome interface with clickable example queries
+ */
 export const WelcomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentSessionId, currentModel } = useAppSelector(state => state.chat);
   
+  /**
+   * Handle clicking on an example query by creating session if needed and processing the query
+   * @param query - The example query text to process
+   */
   const handleQueryClick = async (query: string) => {
     // Create AbortController for this request
     const abortController = abortControllerService.createController();
@@ -78,7 +93,12 @@ export const WelcomeScreen: React.FC = () => {
     }
   };
 
-  // Extract the query processing logic to a separate function
+  /**
+   * Process a query within an existing session context
+   * @param query - The query text to process
+   * @param sessionId - The session ID to use for the conversation
+   * @param abortSignal - Signal to abort the request if needed
+   */
   const processQueryWithSession = async (query: string, sessionId: string, abortSignal: AbortSignal) => {
     // 1. Add to Redux
     dispatch(sendMessage(query));

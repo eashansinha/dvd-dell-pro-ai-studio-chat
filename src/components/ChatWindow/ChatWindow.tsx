@@ -12,16 +12,29 @@
  * limitations under the License.
  */
 
+/**
+ * Chat window component for displaying conversation messages and thinking state
+ * Renders messages in a scrollable list with user/assistant styling differentiation
+ */
+
 import React from 'react';
 import { List, ListItem, ListItemText, Box, Typography } from '@mui/material';
 import { MessageDocType } from '../../db/types';
 
+/**
+ * Props for the ChatWindow component
+ */
 interface ChatWindowProps {
   messages: MessageDocType[];
   isThinking: boolean;
   thinkingTokens: string;
 }
 
+/**
+ * Chat window component displaying conversation messages and AI thinking process
+ * @param props - Component props including messages array and thinking state
+ * @returns JSX element containing the chat message display
+ */
 export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isThinking, thinkingTokens }) => {
   return (
     <Box sx={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>

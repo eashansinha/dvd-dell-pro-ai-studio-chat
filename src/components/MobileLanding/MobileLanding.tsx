@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Mobile landing page component for Dell Pro AI Studio Chat
+ * Displays information about Dell AI PCs and Dell Pro AI Studio for mobile users
+ */
+
 import React from 'react';
 import {
   Box,
@@ -27,6 +32,11 @@ import ComputerIcon from '@mui/icons-material/Computer';
 import DownloadIcon from '@mui/icons-material/Download';
 import BusinessIcon from '@mui/icons-material/Business';
 
+/**
+ * Mobile landing page component that provides information about Dell AI PCs and Dell Pro AI Studio
+ * Shown to users accessing the chat application from mobile devices
+ * @returns JSX element containing the mobile landing page
+ */
 export const MobileLanding: React.FC = () => {
   const theme = useTheme();
 
@@ -231,4 +241,4 @@ export const MobileLanding: React.FC = () => {
       </Container>
     </Box>
   );
-}; 
+};  

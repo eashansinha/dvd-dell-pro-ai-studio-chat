@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Document Library component for managing uploaded documents and their associations with chat sessions
+ * Provides functionality for uploading, viewing, deleting documents and managing document tags
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -50,7 +55,9 @@ import { startSession } from '../../store/store';
 import { v4 as uuidv4 } from 'uuid';
 import './DocumentLibrary.css';
 
-// EmbeddingProgress interface similar to DocumentUpload
+/**
+ * Interface for tracking document embedding progress during upload
+ */
 interface EmbeddingProgress {
   processedChunks: number;
   totalChunks: number;
@@ -60,7 +67,11 @@ interface EmbeddingProgress {
   currentFile?: string;
 }
 
-// Add the formatTime function to format time display
+/**
+ * Format time duration from milliseconds to human-readable string
+ * @param milliseconds - Time duration in milliseconds
+ * @returns Formatted time string (e.g., "2m 30s" or "45s")
+ */
 const formatTime = (milliseconds: number): string => {
   if (!milliseconds || milliseconds <= 0) return '0s';
   
@@ -72,6 +83,10 @@ const formatTime = (milliseconds: number): string => {
   return `${minutes}m ${remainingSeconds}s`;
 };
 
+/**
+ * Document Library component providing document management interface
+ * @returns JSX element containing the document library interface
+ */
 export const DocumentLibrary: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentSessionId = useAppSelector(state => state.chat.currentSessionId);
@@ -98,13 +113,17 @@ export const DocumentLibrary: React.FC = () => {
     tag: string;
   } | null>(null);
   
-  // Add this constant for our special tag prefix
+  /**
+   * Prefix for document reference tags to distinguish from regular tags
+   */
   const DOCUMENT_REF_PREFIX = "doc:";
   
   // Add the embeddingProgress state
   const [embeddingProgress, setEmbeddingProgress] = useState<EmbeddingProgress | null>(null);
   
-  // Load documents and tags
+  /**
+   * Load documents and tags when component mounts or session changes
+   */
   useEffect(() => {
     loadDocuments();
     loadAllTags();
@@ -114,6 +133,9 @@ export const DocumentLibrary: React.FC = () => {
     }
   }, [currentSessionId]);
   
+  /**
+   * Load all documents from database and apply search filtering
+   */
   const loadDocuments = async () => {
     setLoading(true);
     try {
@@ -137,6 +159,9 @@ export const DocumentLibrary: React.FC = () => {
     }
   };
   
+  /**
+   * Load all available tags from documents for autocomplete
+   */
   const loadAllTags = async () => {
     try {
       const tags = await DocumentManager.getAllTags();
@@ -1038,4 +1063,4 @@ export const DocumentLibrary: React.FC = () => {
       </Dialog>
     </Box>
   );
-}; 
+};  

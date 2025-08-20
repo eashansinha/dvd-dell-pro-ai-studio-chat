@@ -12,11 +12,21 @@
  * limitations under the License.
  */
 
+/**
+ * Offline indicator component that displays connection status to users
+ * Shows persistent offline chip and temporary alerts when connection status changes
+ */
+
 import React from 'react';
 import { Snackbar, Alert, Chip } from '@mui/material';
 import { CloudOff, Cloud } from '@mui/icons-material';
 import { useOffline } from '../../context/OfflineContext';
 
+/**
+ * Component that provides visual feedback about online/offline status
+ * Displays a persistent chip when offline and shows alerts on status changes
+ * @returns JSX element containing offline status indicators
+ */
 export const OfflineIndicator: React.FC = () => {
   const { isOnline, isServiceWorkerReady } = useOffline();
   const [showAlert, setShowAlert] = React.useState(false);
@@ -30,6 +40,9 @@ export const OfflineIndicator: React.FC = () => {
     }
   }, [isOnline, prevOnlineState]);
 
+  /**
+   * Handle closing the status change alert
+   */
   const handleClose = () => {
     setShowAlert(false);
   };
@@ -72,4 +85,4 @@ export const OfflineIndicator: React.FC = () => {
       </Snackbar>
     </>
   );
-}; 
+};  

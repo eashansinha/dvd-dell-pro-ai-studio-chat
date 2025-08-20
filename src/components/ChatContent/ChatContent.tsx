@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector } from '../../store/store';
@@ -21,6 +21,11 @@ import { ChatMessages } from '../ChatMessages/ChatMessages';
 import { InputArea } from '../InputArea/InputArea';
 import './ChatContent.css';
 
+/**
+ * Main chat content component displaying messages and input interface
+ * Handles message rendering, user input, and chat interactions
+ * @returns Chat content component with message list and input
+ */
 export const ChatContent: React.FC = () => {
   const { messages } = useAppSelector(state => state.chat);
   const hasMessages = messages.length > 0;

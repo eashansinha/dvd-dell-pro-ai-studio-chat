@@ -21,7 +21,6 @@ import {
   Chip, 
   Tooltip, 
   Divider, 
-  Badge,
   List,
   ListItem,
   ListItemIcon,
@@ -47,9 +46,13 @@ interface DocumentInfo {
   type: 'local' | 'backend' | 'collection';
 }
 
+/**
+ * Header component displaying application title, model selection, and action buttons
+ * @returns Application header component
+ */
 export const Header: React.FC = () => {
   const { messages, currentSessionId } = useAppSelector(state => state.chat);
-  const [sessionTitle, setSessionTitle] = useState<string>('New Chat');
+  const [, setSessionTitle] = useState<string>('New Chat');
   const [documentTags, setDocumentTags] = useState<string[]>([]);
   const [docsCount, setDocsCount] = useState<number>(0);
   const [documentInfo, setDocumentInfo] = useState<DocumentInfo[]>([]);

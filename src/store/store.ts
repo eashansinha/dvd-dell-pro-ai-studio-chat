@@ -36,7 +36,11 @@ interface ChatState {
   isProcessing: boolean; // Add processing state
 }
 
-// Get default model from settings or use fallback
+/**
+ * Get the default model from settings with fallback logic
+ * Ensures the selected model is available and enabled
+ * @returns The default model ID to use
+ */
 const getDefaultModel = (): string => {
   try {
     const savedSettings = getSettings();
@@ -52,7 +56,7 @@ const getDefaultModel = (): string => {
         return savedSettings.defaultModel;
       }
       
-      // If no valid default, find the first enabled model
+      // If no valid default, find the first enabled model from available models
       const firstEnabledModel = savedSettings.availableModels.find((modelId: string) => 
         enabledModels[modelId] !== false
       );
@@ -80,10 +84,18 @@ const initialState: ChatState = {
   isProcessing: false,
 };
 
+/**
+ * Redux slice for managing chat state including sessions, messages, and thinking tokens
+ */
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    /**
+     * Start a new chat session with optional session ID
+     * @param state - Current chat state
+     * @param action - Action with optional session ID payload
+     */
     startSession: (state, action: PayloadAction<string | undefined>) => {
       const newSessionId = action.payload || uuidv4();
       state.currentSessionId = newSessionId;
@@ -96,6 +108,11 @@ const chatSlice = createSlice({
       // Clear any document references from previous sessions
       clearLastReferences();
     },
+    /**
+     * Load an existing session with its messages and initialize thinking display state
+     * @param state - Current chat state
+     * @param action - Action with session ID and messages payload
+     */
     loadSession: (state, action: PayloadAction<{ sessionId: string; messages: MessageDocType[] }>) => {
       state.currentSessionId = action.payload.sessionId;
       // replace in-memory messages with loaded ones
@@ -118,6 +135,11 @@ const chatSlice = createSlice({
       // Clear any document references that aren't attached to messages
       clearLastReferences();
     },
+    /**
+     * Add a new user message to the current session
+     * @param state - Current chat state
+     * @param action - Action with message text payload
+     */
     sendMessage: (state, action: PayloadAction<string>) => {
       const newMessage: MessageDocType = {
         id: uuidv4(),
@@ -127,10 +149,16 @@ const chatSlice = createSlice({
       };
       state.messages.push(newMessage);
     },
+    /**
+     * Process incoming tokens from AI responses, handling thinking tags and regular content
+     * Manages complex logic for parsing <think></think> tags mixed with regular content
+     * @param state - Current chat state
+     * @param action - Action with token string payload
+     */
     receiveToken: (state, action: PayloadAction<string>) => {
       const token = action.payload;
     
-      // Check for mixed content with opening think tag
+      // Check for mixed content with opening think tag (e.g., "Hello <think>")
       if (token.includes('<think>') && !token.startsWith('<think>')) {
         const parts = token.split('<think>');
         // Add first part to regular message
@@ -156,7 +184,7 @@ const chatSlice = createSlice({
         return;
       }
       
-      // Check for mixed content with closing think tag
+      // Check for mixed content with closing think tag (e.g., "reasoning</think>response")
       if (state.isThinking && token.includes('</think>') && !token.startsWith('</think>')) {
         const parts = token.split('</think>');
         // Add first part to thinking content
@@ -206,12 +234,11 @@ const chatSlice = createSlice({
         return;
       }
     
-      // Regular token processing
+      // Regular token processing - either accumulate in thinking or add to message
       if (state.isThinking) {
-        // accumulate tokens in thinkingTokens
         state.thinkingTokens += token;
       } else {
-        // place them in last assistant message or create a new one
+        // Place tokens in last assistant message or create a new one
         const lastMessage = state.messages[state.messages.length - 1];
         if (!lastMessage || lastMessage.sender !== 'assistant') {
           const newMessage: MessageDocType = {
@@ -227,6 +254,11 @@ const chatSlice = createSlice({
         }
       }
     },
+    /**
+     * Handle end of AI response stream, attach thinking content and document references
+     * @param state - Current chat state
+     * @param action - Action with optional document references payload
+     */
     endOfStream: (state, action: PayloadAction<DocumentReference[] | undefined>) => {
       // If we have accumulated thinking tokens, attach them to the last assistant message
       if (state.thinkingTokens.length > 0) {
@@ -252,14 +284,29 @@ const chatSlice = createSlice({
       state.isProcessing = false; // Reset processing state
       abortControllerService.clear(); // Clear abort controller from service
     },
+    /**
+     * Set the currently selected AI model
+     * @param state - Current chat state
+     * @param action - Action with model ID payload
+     */
     setCurrentModel: (state, action: PayloadAction<string>) => {
       state.currentModel = action.payload;
     },
+    /**
+     * Toggle the display of thinking content for a specific message
+     * @param state - Current chat state
+     * @param action - Action with message ID payload
+     */
     toggleThinkingDisplay: (state, action: PayloadAction<string>) => {
       const messageId = action.payload;
       // If it's undefined or doesn't exist yet, default to false (since we're toggling from true)
       state.displayThinking[messageId] = !(state.displayThinking[messageId]);
     },
+    /**
+     * Delete a chat session and clear current session if it was active
+     * @param state - Current chat state
+     * @param action - Action with session ID payload
+     */
     deleteSession: (state, action: PayloadAction<string>) => {
       const sessionIdToDelete = action.payload;
       // Remove from sessions array
@@ -272,6 +319,11 @@ const chatSlice = createSlice({
       }
     },
     
+    /**
+     * Set the title for a chat session (handled by middleware for DB persistence)
+     * @param state - Current chat state
+     * @param action - Action with session ID and title payload
+     */
     setChatTitle: (state, action: PayloadAction<{ sessionId: string; title: string }>) => {
       // This only updates the title in Redux, the DB update happens in middleware
       if (action.payload.sessionId === state.currentSessionId) {
@@ -280,12 +332,16 @@ const chatSlice = createSlice({
       }
     },
     
+    /**
+     * Regenerate the last assistant message by removing it and resetting thinking state
+     * @param state - Current chat state
+     */
     regenerateMessage: (state) => {
-      // Find the last assistant message
+      // Find the last assistant message by searching in reverse
       const lastAssistantMessageIndex = [...state.messages].reverse().findIndex(m => m.sender === 'assistant');
       
       if (lastAssistantMessageIndex !== -1) {
-        // Convert to actual index from reverse index
+        // Convert reverse index to actual array index
         const actualIndex = state.messages.length - 1 - lastAssistantMessageIndex;
         
         // Remove only the last assistant message (will be regenerated)
@@ -300,9 +356,18 @@ const chatSlice = createSlice({
         console.log('Regenerating assistant message with model:', state.currentModel);
       }
     },
+    /**
+     * Set the processing state to indicate when AI is generating a response
+     * @param state - Current chat state
+     * @param action - Action with processing boolean payload
+     */
     setProcessing: (state, action: PayloadAction<boolean>) => {
       state.isProcessing = action.payload;
     },
+    /**
+     * Cancel the current AI request and add a cancellation message
+     * @param state - Current chat state
+     */
     cancelRequest: (state) => {
       // Use the service to abort
       abortControllerService.abort();
@@ -349,9 +414,23 @@ export const store = configureStore({
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
+/**
+ * Typed hook for dispatching actions to the Redux store
+ * @returns Typed dispatch function
+ */
 export const useAppDispatch = () => useDispatch<AppDispatch>();
+
+/**
+ * Typed hook for selecting state from the Redux store
+ */
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
+/**
+ * Async thunk for handling end of stream processing and saving messages to database
+ * @param documentReferences - Optional document references to attach to the message
+ * @param thunkAPI - Redux toolkit thunk API
+ * @returns Object with document references
+ */
 export const endOfStreamAsync = createAsyncThunk(
   'chat/endOfStream',
   async (documentReferences: DocumentReference[] = [], thunkAPI) => {

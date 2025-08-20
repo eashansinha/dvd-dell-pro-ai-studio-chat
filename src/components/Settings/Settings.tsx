@@ -12,6 +12,10 @@
  * limitations under the License.
  */
 
+/**
+ * Settings component for managing application configuration including API settings,
+ * model preferences, document processing, and vector database connections
+ */
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -29,7 +33,6 @@ import {
   CircularProgress,
   List,
   ListItem,
-  ListItemText,
   Divider,
   Grid,
   Paper,
@@ -42,27 +45,27 @@ import {
   AccordionDetails,
   Tooltip,
   IconButton,
-  Slider,
   FormHelperText,
   Alert,
   Chip
 } from '@mui/material';
 import { ThemeConfig, DEFAULT_THEMES } from '../../theme/themeConfig';
-import { DocumentUpload } from '../DocumentUpload/DocumentUpload';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
-import SettingsIcon from '@mui/icons-material/Settings';
 import ArticleIcon from '@mui/icons-material/Article';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import CloudIcon from '@mui/icons-material/Cloud';
-import DatabaseIcon from '@mui/icons-material/Storage';
 import { DocumentLibrary } from '../DocumentLibrary/DocumentLibrary';
 import { VectorDatabaseSettings } from './VectorDatabaseSettings';
 import { vectorDbService } from '../../services/VectorDbService';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { ModelService } from '../../services/ModelService';
 
-// Custom color picker component
+/**
+ * Custom color picker input component with text field and color preview
+ * @param props - Component props including label, color value, and onChange handler
+ * @returns Color picker input component
+ */
 const ColorPickerInput: React.FC<{
   label: string;
   color: string;
@@ -100,7 +103,9 @@ const ColorPickerInput: React.FC<{
   );
 };
 
-// Interfaces
+/**
+ * Props for the Settings component
+ */
 interface SettingsProps {
   open: boolean;
   onClose: () => void;
@@ -108,6 +113,9 @@ interface SettingsProps {
   currentSettings: AppSettings;
 }
 
+/**
+ * Application settings interface defining all configurable options
+ */
 export interface AppSettings {
   apiBaseUrl: string;
   backendApiUrl: string;
@@ -143,7 +151,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
   const [activeTab, setActiveTab] = useState('api');
   const [systemMessage, setSystemMessage] = useState('');
   const [documentChunkSize, setDocumentChunkSize] = useState(1000);
@@ -258,7 +265,7 @@ export const Settings: React.FC<SettingsProps> = ({
     if (!silent) setTestResult(null);
     
     try {
-      const result = await ModelService.fetchModels(settings.apiBaseUrl, settings.apiKey, silent);
+      const result = await ModelService.fetchModels(settings.apiBaseUrl, settings.apiKey);
       
       if (result.success && result.models) {
         // Store models in local state
@@ -439,7 +446,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
           <Tabs 
             value={activeTab} 
-            onChange={(e, newValue) => setActiveTab(newValue)}
+            onChange={(_, newValue) => setActiveTab(newValue)}
             variant="scrollable"
             scrollButtons="auto"
           >

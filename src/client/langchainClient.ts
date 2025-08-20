@@ -12,14 +12,25 @@
  * limitations under the License.
  */
 
+/**
+ * LangChain client for handling RAG (Retrieval-Augmented Generation) operations
+ * Manages document retrieval and context-aware chat completions using OpenAI models
+ */
+
 import { ChatOpenAI } from "@langchain/openai";
 import { MultiVectorRAG } from './multiVectorRag';
 import { DocumentReference } from '../db/types';
 import { getSettings } from '../utils/settings';
 
-// Store the most recent document references for UI display
+/**
+ * Store the most recent document references for UI display
+ */
 let lastReferences: DocumentReference[] = [];
 
+/**
+ * Get the last retrieved document references for UI display
+ * @returns Array of document references from the most recent RAG query
+ */
 export function getLastReferences(): DocumentReference[] {
   return lastReferences;
 }
@@ -33,7 +44,14 @@ export function clearLastReferences(): void {
 }
 
 /**
- * Process a chat message using RAG when document references are present
+ * Process a chat message using RAG (Retrieval-Augmented Generation) with document context
+ * @param userPrompt - The user's input message
+ * @param previousMessages - Array of previous conversation messages
+ * @param sessionId - Unique identifier for the chat session
+ * @param modelId - The AI model to use for completion
+ * @param onToken - Callback function called for each token received
+ * @param onDone - Callback function called when completion is finished
+ * @param abortSignal - Optional abort signal to cancel the request
  */
 export async function callRAGCompletion(
   userPrompt: string,
@@ -197,7 +215,15 @@ export async function callRAGCompletion(
   }
 }
 
-// Fallback to standard completion if RAG fails
+/**
+ * Fallback to standard completion when RAG fails or no documents are found
+ * @param userPrompt - The user's input message
+ * @param previousMessages - Array of previous conversation messages
+ * @param modelId - The AI model to use for completion
+ * @param onToken - Callback function called for each token received
+ * @param onDone - Callback function called when completion is finished
+ * @param abortSignal - Optional abort signal to cancel the request
+ */
 async function callFallbackCompletion(
   userPrompt: string,
   previousMessages: Array<{role: string, content: string}>,
@@ -209,4 +235,4 @@ async function callFallbackCompletion(
   // Call the original OpenAI client
   const { callOpenAICompletion } = await import('./openaiClient');
   return callOpenAICompletion(userPrompt, previousMessages, modelId, onToken, onDone, abortSignal);
-} 
+}    

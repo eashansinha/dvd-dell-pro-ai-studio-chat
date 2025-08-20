@@ -14,7 +14,9 @@
 
 import { Document } from '@langchain/core/documents';
 
-// Types for the backend API responses
+/**
+ * Interface for vector store configuration from backend API
+ */
 interface VectorStore {
   id: string;
   name: string;
@@ -22,6 +24,9 @@ interface VectorStore {
   description?: string;
 }
 
+/**
+ * Interface for document collection from backend API
+ */
 interface Collection {
   id: string;
   name: string;
@@ -29,6 +34,9 @@ interface Collection {
   tags: string[];
 }
 
+/**
+ * Interface for document metadata from backend API
+ */
 interface DocumentMetadata {
   documentId: string;
   documentName: string;
@@ -37,6 +45,9 @@ interface DocumentMetadata {
   tags?: string[];
 }
 
+/**
+ * Interface for document search response from backend API
+ */
 interface DocumentResponse {
   content: string;
   metadata: DocumentMetadata;
@@ -47,6 +58,10 @@ interface DocumentResponse {
 }
 
 // BackendApiService class for interacting with the backend vector store API
+/**
+ * Service for handling backend API communications including health checks,
+ * model management, and document processing endpoints
+ */
 export class BackendApiService {
   private baseUrl: string;
   
@@ -57,13 +72,19 @@ export class BackendApiService {
     console.log(`Backend API Service initialized with URL: ${this.baseUrl}`);
   }
   
-  // Update the base URL when settings change
+  /**
+   * Update the base URL when settings change
+   * @param newUrl - The new backend API URL
+   */
   updateBaseUrl(newUrl: string): void {
     this.baseUrl = newUrl;
     console.log(`Backend API URL updated to: ${this.baseUrl}`);
   }
   
-  // Check connection to the backend API
+  /**
+   * Test connection to the backend API
+   * @returns Promise resolving to connection test result
+   */
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
@@ -91,7 +112,10 @@ export class BackendApiService {
     }
   }
   
-  // Get list of available vector stores
+  /**
+   * Get list of available vector stores from backend
+   * @returns Promise resolving to array of vector store configurations
+   */
   async getVectorStores(): Promise<VectorStore[]> {
     try {
       const response = await fetch(`${this.baseUrl}/vector-stores`);
@@ -107,7 +131,10 @@ export class BackendApiService {
     }
   }
   
-  // Get list of available collections
+  /**
+   * Get list of available document collections from backend
+   * @returns Promise resolving to array of collection configurations
+   */
   async getCollections(): Promise<Collection[]> {
     try {
       const response = await fetch(`${this.baseUrl}/collections`);
@@ -123,7 +150,12 @@ export class BackendApiService {
     }
   }
   
-  // Search for documents
+  /**
+   * Search for documents using the backend API
+   * @param query - The search query text
+   * @param options - Search options including result limit and filters
+   * @returns Promise resolving to array of matching documents
+   */
   async searchDocuments(
     query: string,
     options?: {
@@ -179,7 +211,10 @@ export class BackendApiService {
     }
   }
   
-  // Get available tags (unique across all collections)
+  /**
+   * Get all available tags from collections
+   * @returns Promise resolving to array of unique tag strings
+   */
   async getAvailableTags(): Promise<string[]> {
     try {
       const collections = await this.getCollections();
@@ -198,5 +233,7 @@ export class BackendApiService {
   }
 }
 
-// Create a singleton instance
-export const backendApiService = new BackendApiService(); 
+/**
+ * Singleton instance of the backend API service
+ */
+export const backendApiService = new BackendApiService();         

@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Main chat application component providing theme management, settings, and mobile detection
+ * Handles application initialization, database setup, and session management
+ */
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Provider } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -40,6 +45,11 @@ declare global {
 
 window.store = store;
 
+/**
+ * Main application component that provides the chat interface with theme support,
+ * settings management, and mobile device detection
+ * @returns The main chat application component
+ */
 export const ChatApp: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     // Use the centralized getSettings function
@@ -60,6 +70,9 @@ export const ChatApp: React.FC = () => {
 
   // Check if mobile on mount and window resize
   useEffect(() => {
+    /**
+     * Check if the current device is mobile and update state accordingly
+     */
     const checkMobile = () => {
       setIsMobile(isMobileDevice());
     };
@@ -84,7 +97,10 @@ export const ChatApp: React.FC = () => {
     saveSettings(settings);
   }, [settings]);
 
-  // Handle settings changes
+  /**
+   * Handle settings changes and persist them to localStorage
+   * @param newSettings - The updated application settings
+   */
   const handleSaveSettings = (newSettings: AppSettings) => {
     setSettings(newSettings);
     // You may need to update OpenAI client configuration here
@@ -100,6 +116,10 @@ export const ChatApp: React.FC = () => {
       return;
     }
 
+    /**
+     * Initialize the application by setting up database and session management
+     * Handles both new session creation and restoration of existing sessions
+     */
     const initApp = async () => {
       // Skip if we've already initialized
       if (initialized.current) {

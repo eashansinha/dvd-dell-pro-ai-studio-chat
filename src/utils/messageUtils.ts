@@ -17,6 +17,11 @@ import { MessageDocType } from '../db/types';
 
 /**
  * Creates a message object with all required fields for the database
+ * @param text - The message text content
+ * @param sender - The sender type ('user' or 'assistant')
+ * @param sessionId - The session ID for the conversation
+ * @param additionalFields - Additional fields to merge into the message object
+ * @returns Complete message object ready for database storage
  */
 export function createMessageObject(
   text: string, 
@@ -33,10 +38,9 @@ export function createMessageObject(
     thinkingContent: '',
     // Include default values for any potentially required fields
     metrics: {
-      tokenCount: text.split(' ').length,
       timeToFirstToken: 0,
       totalTime: 0
-    },
+    } as any,
     ...additionalFields
   };
-} 
+}                                        

@@ -12,6 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Vector Database Settings component for configuring backend API connections
+ * Provides interface for managing vector database backends and document collections
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -64,11 +69,17 @@ import {
 } from '../../types/vectorDb';
 import { vectorDbService } from '../../services/VectorDbService';
 
+/**
+ * Props for the VectorDatabaseSettings component
+ */
 interface VectorDatabaseSettingsProps {
   onConfigurationChange?: () => void;
 }
 
-// Default Docker configuration function
+/**
+ * Creates default Docker configurations for local vector databases
+ * @param notifyChange - Optional callback to notify parent of configuration changes
+ */
 const createDefaultDockerConfigurations = (
   notifyChange?: () => void
 ): void => {
@@ -135,6 +146,11 @@ const createDefaultDockerConfigurations = (
   }
 };
 
+/**
+ * Vector Database Settings component for managing backend API connections
+ * @param props - Component props including configuration change callback
+ * @returns JSX element containing vector database configuration interface
+ */
 export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({ 
   onConfigurationChange 
 }) => {
@@ -156,7 +172,9 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
     loadBackendData();
   }, []);
 
-  // Load backend data from API
+  /**
+   * Load backend data from API and test connection
+   */
   const loadBackendData = async () => {
     setLoading(true);
     setError(null);
@@ -197,7 +215,9 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
     }
   };
 
-  // Test backend connection
+  /**
+   * Test connection to the backend API
+   */
   const testBackendConnection = async () => {
     setIsTestingConnection(true);
     
@@ -228,7 +248,11 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
     }
   };
 
-  // Get icon for backend type
+  /**
+   * Get appropriate icon for backend type
+   * @param type - The backend type string
+   * @returns JSX icon element
+   */
   const getBackendIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'pinecone':
@@ -240,7 +264,10 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
     }
   };
 
-  // Render list of available backends
+  /**
+   * Render list of available vector database backends
+   * @returns JSX element containing backend list
+   */
   const renderBackends = () => {
     if (backends.length === 0) {
       return (
@@ -288,7 +315,10 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
     );
   };
 
-  // Render list of available collections
+  /**
+   * Render list of available document collections
+   * @returns JSX element containing collections list
+   */
   const renderCollections = () => {
     if (collections.length === 0) {
       return (
@@ -488,4 +518,4 @@ export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({
       </Dialog>
     </Box>
   );
-}; 
+};  

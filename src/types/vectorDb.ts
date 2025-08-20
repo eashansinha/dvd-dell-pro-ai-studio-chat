@@ -13,9 +13,16 @@
  */
 
 import { VectorStore } from '@langchain/core/vectorstores';
-import { Embeddings } from '@langchain/core/embeddings';
 
-export type VectorDbType = 
+/**
+ * Vector database configuration types and interfaces
+ * Defines configuration structures for various vector database providers
+ */
+
+/**
+ * Supported vector database types
+ */
+export type VectorDbType =
   | 'milvus' 
   | 'qdrant' 
   | 'weaviate' 
@@ -23,6 +30,9 @@ export type VectorDbType =
   | 'pgvector'
   | 'pinecone';
 
+/**
+ * Base configuration interface for vector database connections
+ */
 export interface BaseVectorDbConfig {
   id: string;
   name: string;
@@ -32,6 +42,9 @@ export interface BaseVectorDbConfig {
   tags?: string[];
 }
 
+/**
+ * Configuration interface for Milvus vector database
+ */
 export interface MilvusConfig extends BaseVectorDbConfig {
   type: 'milvus';
   url: string;
@@ -41,6 +54,9 @@ export interface MilvusConfig extends BaseVectorDbConfig {
   collection: string;
 }
 
+/**
+ * Configuration interface for Qdrant vector database
+ */
 export interface QdrantConfig extends BaseVectorDbConfig {
   type: 'qdrant';
   url: string;
@@ -48,6 +64,9 @@ export interface QdrantConfig extends BaseVectorDbConfig {
   collection: string;
 }
 
+/**
+ * Configuration interface for Weaviate vector database
+ */
 export interface WeaviateConfig extends BaseVectorDbConfig {
   type: 'weaviate';
   url: string;
@@ -55,12 +74,18 @@ export interface WeaviateConfig extends BaseVectorDbConfig {
   className: string;
 }
 
+/**
+ * Configuration interface for Chroma vector database
+ */
 export interface ChromaConfig extends BaseVectorDbConfig {
   type: 'chroma';
   url: string;
   collection: string;
 }
 
+/**
+ * Configuration interface for PostgreSQL with pgvector extension
+ */
 export interface PGVectorConfig extends BaseVectorDbConfig {
   type: 'pgvector';
   connectionString: string;
@@ -68,6 +93,9 @@ export interface PGVectorConfig extends BaseVectorDbConfig {
   queryName?: string;
 }
 
+/**
+ * Configuration interface for Pinecone vector database
+ */
 export interface PineconeConfig extends BaseVectorDbConfig {
   type: 'pinecone';
   apiKey: string;
@@ -76,6 +104,9 @@ export interface PineconeConfig extends BaseVectorDbConfig {
   namespace?: string;
 }
 
+/**
+ * Union type of all vector database configurations
+ */
 export type VectorDbConfig = 
   | MilvusConfig 
   | QdrantConfig 
@@ -84,7 +115,10 @@ export type VectorDbConfig =
   | PGVectorConfig
   | PineconeConfig;
 
+/**
+ * Interface representing a connection to a vector database
+ */
 export interface VectorDbConnection {
   config: VectorDbConfig;
   vectorStore?: VectorStore;
-} 
+}    
