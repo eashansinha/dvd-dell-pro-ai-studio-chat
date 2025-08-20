@@ -1,10 +1,13 @@
-/*
- * Copyright © 2025 Dell Inc. or its subsidiaries. All Rights Reserved.
-
+/**
+ * Dell Pro AI Studio Chat
+ * Copyright (c) 2024 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,450 +27,524 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Progress } from '../ui/progress';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloudIcon from '@mui/icons-material/Cloud';
-import StorageIcon from '@mui/icons-material/Storage';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import InfoIcon from '@mui/icons-material/Info';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import { 
-  VectorDbConfig, 
-  VectorDbType,
-  MilvusConfig,
-  QdrantConfig,
-  WeaviateConfig,
-  ChromaConfig,
-  PGVectorConfig,
-  PineconeConfig
-} from '../../types/vectorDb';
+import { Plus, Edit, Trash, Database, HardDrive, Cloud, Info } from 'lucide-react';
 import { vectorDbService } from '../../services/VectorDbService';
+import { VectorDbConfig } from '../../types/vectorDb';
 
-interface VectorDatabaseSettingsProps {
+// Default Docker configurations for vector databases
+const DEFAULT_MILVUS_DOCKER = `version: '3.5'
+
+services:
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${PWD}/volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - ${PWD}/volumes/minio:/minio_data
+    command: minio server /minio_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.2.8
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - ${PWD}/volumes/milvus:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+
+networks:
+  default:
+    name: milvus
+`;
+
+const DEFAULT_QDRANT_DOCKER = `version: '3.7'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.1.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ${PWD}/volumes/qdrant:/qdrant/storage
+    networks:
+      - qdrant-network
+
+networks:
+  qdrant-network:
+    driver: bridge
+`;
+
+export const VectorDatabaseSettings: React.FC<{
   onConfigurationChange?: () => void;
-}
-
-// Default Docker configuration function
-const createDefaultDockerConfigurations = (
-  notifyChange?: () => void
-): void => {
-  // Check if any configurations already exist
-  const existingConfigs = vectorDbService.getConfigurations();
-  
-  // Define default Docker configurations
-  const defaultConfigs = [
-    {
-      type: 'milvus',
-      name: 'Local Milvus',
-      description: 'Docker localhost Milvus instance',
-      enabled: true,
-      tags: ['local', 'docker'],
-      url: 'http://localhost:19530',
-      collection: 'documents'
-    },
-    
-    {
-      type: 'qdrant',
-      name: 'Local Qdrant',
-      description: 'Docker localhost Qdrant instance',
-      enabled: true,
-      tags: ['local', 'docker'],
-      url: 'http://localhost:6333',
-      collection: 'documents'
-    },
-    
-    {
-      type: 'weaviate',
-      name: 'Local Weaviate',
-      description: 'Docker localhost Weaviate instance',
-      enabled: true,
-      tags: ['local', 'docker'],
-      url: 'http://localhost:8080',
-      className: 'Document'
-    },
-    
-    {
-      type: 'pgvector',
-      name: 'Local PGVector',
-      description: 'Docker localhost PostgreSQL with pgvector',
-      enabled: true,
-      tags: ['local', 'docker'],
-      connectionString: 'postgresql://postgres:postgres@localhost:5432/vectordb',
-      tableName: 'documents'
-    }
-  ];
-  
-  // Add each default configuration if it doesn't already exist (check by name)
-  defaultConfigs.forEach(config => {
-    const exists = existingConfigs.some(
-      existing => existing.name === config.name && existing.type === config.type
-    );
-    
-    if (!exists) {
-      vectorDbService.addConfiguration(config as any);
-    }
+}> = ({ onConfigurationChange }) => {
+  const [configurations, setConfigurations] = useState<VectorDbConfig[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentConfig, setCurrentConfig] = useState<VectorDbConfig | null>(null);
+  const [formData, setFormData] = useState<VectorDbConfig>({
+    id: '',
+    name: '',
+    type: 'milvus',
+    host: 'localhost',
+    port: 19530,
+    user: '',
+    password: '',
+    collection: '',
+    isDefault: false
   });
-  
-  // Notify parent component about the change
-  if (notifyChange) {
-    notifyChange();
-  }
-};
+  const [isNew, setIsNew] = useState(true);
+  const [testStatus, setTestStatus] = useState<'success' | 'error' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-export const VectorDatabaseSettings: React.FC<VectorDatabaseSettingsProps> = ({ 
-  onConfigurationChange 
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [backends, setBackends] = useState<Array<{id: string, name: string, type: string}>>([]);
-  const [collections, setCollections] = useState<Array<{id: string, name: string, tags: string[]}>>([]);
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<{success: boolean, message: string} | null>(null);
-  const [showConnectionDialog, setShowConnectionDialog] = useState(false);
-  const [apiEndpoint, setApiEndpoint] = useState('');
-
-  // Load configuration on mount
+  // Load configurations on mount
   useEffect(() => {
-    // Get settings from localStorage
-    const settings = JSON.parse(localStorage.getItem('chatAppSettings') || '{}');
-    setApiEndpoint(settings.backendApiUrl || 'http://localhost:8000');
-    
-    loadBackendData();
+    loadConfigurations();
   }, []);
 
-  // Load backend data from API
-  const loadBackendData = async () => {
-    setLoading(true);
-    setError(null);
+  // Load vector database configurations
+  const loadConfigurations = () => {
+    const configs = vectorDbService.getConfigurations();
+    setConfigurations(configs);
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field: keyof VectorDbConfig, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Open edit dialog for a configuration
+  const handleEdit = (config: VectorDbConfig) => {
+    setCurrentConfig(config);
+    setFormData({ ...config });
+    setIsNew(false);
+    setEditDialogOpen(true);
+  };
+
+  // Open dialog to add a new configuration
+  const handleAdd = () => {
+    setCurrentConfig(null);
+    setFormData({
+      id: Date.now().toString(),
+      name: '',
+      type: 'milvus',
+      host: 'localhost',
+      port: 19530,
+      user: '',
+      password: '',
+      collection: '',
+      isDefault: configurations.length === 0 // Make default if it's the first one
+    });
+    setIsNew(true);
+    setEditDialogOpen(true);
+  };
+
+  // Open delete confirmation dialog
+  const handleDeleteClick = (config: VectorDbConfig) => {
+    setCurrentConfig(config);
+    setDeleteDialogOpen(true);
+  };
+
+  // Delete a configuration
+  const handleDelete = () => {
+    if (currentConfig) {
+      vectorDbService.deleteConfiguration(currentConfig.id);
+      loadConfigurations();
+      if (onConfigurationChange) {
+        onConfigurationChange();
+      }
+    }
+    setDeleteDialogOpen(false);
+  };
+
+  // Save a configuration
+  const handleSave = () => {
+    if (isNew) {
+      vectorDbService.addConfiguration(formData);
+    } else {
+      vectorDbService.updateConfiguration(formData);
+    }
+    
+    loadConfigurations();
+    setEditDialogOpen(false);
+    
+    if (onConfigurationChange) {
+      onConfigurationChange();
+    }
+  };
+
+  // Test connection to a vector database
+  const handleTestConnection = async () => {
+    setIsLoading(true);
+    setTestStatus(null);
     
     try {
-      // Check if we can connect to backend
-      const response = await fetch(`${apiEndpoint}/health`, {
-        method: 'GET',
-      });
-      
-      const connectionStatus = {
-        success: response.ok,
-        message: response.ok ? 'Backend API connection successful' : `Backend API error: ${response.status} ${response.statusText}`
-      };
-      
-      setConnectionStatus(connectionStatus);
-      
-      if (connectionStatus.success) {
-        // For now, we'll just set placeholder data
-        // In a real implementation, these would come from API calls
-        setBackends([
-          { id: 'backend', name: 'Vector DB Backend', type: 'api' }
-        ]);
-        setCollections([
-          { id: 'docs', name: 'Documents Collection', tags: ['documents', 'text'] }
-        ]);
-      } else {
-        setError('Cannot connect to backend API. Please check your Backend API URL settings.');
-      }
-    } catch (err) {
-      setError(`Error loading vector database configuration: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setConnectionStatus({
-        success: false,
-        message: 'Failed to connect to backend API'
-      });
+      const success = await vectorDbService.testConnection(formData);
+      setTestStatus(success ? 'success' : 'error');
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      setTestStatus('error');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Test backend connection
-  const testBackendConnection = async () => {
-    setIsTestingConnection(true);
+  // Set a configuration as default
+  const handleSetDefault = (config: VectorDbConfig) => {
+    vectorDbService.setDefaultConfiguration(config.id);
+    loadConfigurations();
     
-    try {
-      // Simple health check
-      const response = await fetch(`${apiEndpoint}/health`, {
-        method: 'GET',
-      });
-      
-      const result = {
-        success: response.ok,
-        message: response.ok ? 'Backend API connection successful' : `Backend API error: ${response.status} ${response.statusText}`
-      };
-      
-      setConnectionStatus(result);
-      
-      if (result.success) {
-        // Reload data if connection is successful
-        loadBackendData();
-      }
-    } catch (err) {
-      setConnectionStatus({
-        success: false,
-        message: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`
-      });
-    } finally {
-      setIsTestingConnection(false);
+    if (onConfigurationChange) {
+      onConfigurationChange();
     }
-  };
-
-  // Get icon for backend type
-  const getBackendIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'pinecone':
-      case 'openai':
-      case 'azure':
-        return <CloudIcon />;
-      default:
-        return <StorageIcon />;
-    }
-  };
-
-  // Render list of available backends
-  const renderBackends = () => {
-    if (backends.length === 0) {
-      return (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            No vector database backends available from the API.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Make sure your backend API is running and properly configured.
-          </Typography>
-        </Paper>
-      );
-    }
-
-    return (
-      <List>
-        {backends.map((backend) => (
-          <Paper key={backend.id} sx={{ mb: 2, overflow: 'hidden' }}>
-            <ListItem>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {getBackendIcon(backend.type)}
-                    <Typography variant="subtitle1" sx={{ ml: 1 }}>
-                      {backend.name}
-                    </Typography>
-                    <Chip 
-                      label="Active" 
-                      size="small" 
-                      color="success" 
-                      sx={{ ml: 1 }} 
-                    />
-                  </Box>
-                }
-                secondary={
-                  <Typography variant="body2" color="text.secondary">
-                    Type: {backend.type}
-                  </Typography>
-                }
-              />
-            </ListItem>
-          </Paper>
-        ))}
-      </List>
-    );
-  };
-
-  // Render list of available collections
-  const renderCollections = () => {
-    if (collections.length === 0) {
-      return (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            No document collections available from the API.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Upload documents to your backend service to make them available for queries.
-          </Typography>
-        </Paper>
-      );
-    }
-
-    return (
-      <List>
-        {collections.map((collection) => (
-          <Paper key={collection.id} sx={{ mb: 2, overflow: 'hidden' }}>
-            <ListItem>
-              <ListItemText
-                primary={
-                  <Typography variant="subtitle1">
-                    {collection.name}
-                  </Typography>
-                }
-                secondary={
-                  <Box sx={{ mt: 1 }}>
-                    {collection.tags && collection.tags.length > 0 && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {collection.tags.map((tag) => (
-                          <Chip
-                            key={tag}
-                            label={tag}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
-                }
-              />
-            </ListItem>
-          </Paper>
-        ))}
-      </List>
-    );
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">
-          Vector Database Configuration
-          <Tooltip title="Configure connection to the backend API for vector search">
-            <IconButton size="small">
-              <InfoIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<RefreshIcon />}
-            onClick={loadBackendData}
-            disabled={loading}
-          >
-            Refresh
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Vector Database Configurations</h3>
+        <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
+          <Plus className="h-4 w-4" />
+          Add Configuration
+        </Button>
+      </div>
+      
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Configure connections to vector databases for document storage and retrieval.
+          You can use local Docker instances or connect to remote services.
+        </AlertDescription>
+      </Alert>
+      
+      {configurations.length === 0 ? (
+        <div className="text-center p-8 border border-dashed rounded-lg">
+          <Database className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">No vector database configurations yet.</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Add a configuration to start storing and retrieving documents.
+          </p>
+          <Button onClick={handleAdd} variant="outline" size="sm" className="flex items-center gap-1 mx-auto">
+            <Plus className="h-4 w-4" />
+            Add Configuration
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setShowConnectionDialog(true)}
-          >
-            Test Connection
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Backend API connection status */}
-      {connectionStatus && (
-        <Alert 
-          severity={connectionStatus.success ? "success" : "error"}
-          sx={{ mb: 2 }}
-          action={
-            <Button 
-              color="inherit" 
-              size="small"
-              onClick={testBackendConnection}
-              disabled={isTestingConnection}
-            >
-              {isTestingConnection ? <CircularProgress size={16} /> : "Retry"}
-            </Button>
-          }
-        >
-          {connectionStatus.message}
-        </Alert>
-      )}
-
-      {/* Loading indicator */}
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* Error message */}
-      {error && !loading && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* API configuration info */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1">Backend API Configuration</Typography>
-        <Typography variant="body2">
-          Backend API Endpoint: {apiEndpoint}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          To change the backend API endpoint, update the "Backend API URL" in the API Configuration settings.
-        </Typography>
-      </Paper>
-
-      {/* Vector database backends */}
-      {!loading && !error && (
-        <>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            Available Vector Databases
-          </Typography>
-          {renderBackends()}
-          
-          <Divider sx={{ my: 3 }} />
-          
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            Available Document Collections
-          </Typography>
-          {renderCollections()}
-        </>
-      )}
-
-      {/* Connection test dialog */}
-      <Dialog open={showConnectionDialog} onClose={() => setShowConnectionDialog(false)}>
-        <DialogTitle>Backend API Connection</DialogTitle>
-        <DialogContent>
-          <Box sx={{ minWidth: 300, py: 1 }}>
-            {isTestingConnection ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 3 }}>
-                <CircularProgress size={40} />
-                <Typography sx={{ ml: 2 }}>Testing connection...</Typography>
-              </Box>
-            ) : (
-              <>
-                {connectionStatus && (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    p: 2, 
-                    bgcolor: connectionStatus.success ? 'success.light' : 'error.light', 
-                    borderRadius: 1,
-                    color: connectionStatus.success ? 'success.dark' : 'error.dark'
-                  }}>
-                    {connectionStatus.success ? (
-                      <CheckCircleIcon sx={{ mr: 1 }} />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {configurations.map((config) => (
+            <Card key={config.id} className={`${config.isDefault ? 'border-primary' : ''}`}>
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base">
+                    {config.name}
+                  </CardTitle>
+                  {config.isDefault && (
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      Default
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleEdit(config)}
+                          className="h-8 w-8"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteClick(config)}
+                          className="h-8 w-8 text-destructive"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Type:</span>{' '}
+                    {config.type === 'milvus' ? (
+                      <span className="flex items-center gap-1">
+                        <HardDrive className="h-3 w-3" /> Milvus
+                      </span>
+                    ) : config.type === 'qdrant' ? (
+                      <span className="flex items-center gap-1">
+                        <Database className="h-3 w-3" /> Qdrant
+                      </span>
                     ) : (
-                      <ErrorIcon sx={{ mr: 1 }} />
+                      <span className="flex items-center gap-1">
+                        <Cloud className="h-3 w-3" /> {config.type}
+                      </span>
                     )}
-                    <Typography>
-                      {connectionStatus.message}
-                    </Typography>
-                  </Box>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Host:</span> {config.host}:{config.port}
+                  </div>
+                  {config.collection && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Collection:</span> {config.collection}
+                    </div>
+                  )}
+                </div>
+                
+                {!config.isDefault && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleSetDefault(config)}
+                    className="mt-2"
+                  >
+                    Set as Default
+                  </Button>
                 )}
-
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  Backend API Endpoint: {apiEndpoint}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  You can change the backend API endpoint in the API Configuration settings.
-                </Typography>
-              </>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isNew ? 'Add Vector Database' : 'Edit Vector Database'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">Name</label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="My Vector Database"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="type" className="text-sm font-medium">Type</label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleInputChange('type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select database type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="milvus">Milvus</SelectItem>
+                  <SelectItem value="qdrant">Qdrant</SelectItem>
+                  <SelectItem value="pinecone">Pinecone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="host" className="text-sm font-medium">Host</label>
+                <Input
+                  id="host"
+                  value={formData.host}
+                  onChange={(e) => handleInputChange('host', e.target.value)}
+                  placeholder="localhost"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="port" className="text-sm font-medium">Port</label>
+                <Input
+                  id="port"
+                  type="number"
+                  value={formData.port}
+                  onChange={(e) => handleInputChange('port', parseInt(e.target.value))}
+                  placeholder="19530"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="user" className="text-sm font-medium">Username (optional)</label>
+                <Input
+                  id="user"
+                  value={formData.user}
+                  onChange={(e) => handleInputChange('user', e.target.value)}
+                  placeholder="username"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">Password (optional)</label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder="password"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="collection" className="text-sm font-medium">Collection Name (optional)</label>
+              <Input
+                id="collection"
+                value={formData.collection}
+                onChange={(e) => handleInputChange('collection', e.target.value)}
+                placeholder="my_collection"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to use the default collection name.
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isDefault"
+                checked={formData.isDefault}
+                onCheckedChange={(checked) => handleInputChange('isDefault', checked)}
+              />
+              <label htmlFor="isDefault" className="text-sm font-medium">
+                Set as default vector database
+              </label>
+            </div>
+            
+            {(formData.type === 'milvus' || formData.type === 'qdrant') && formData.host === 'localhost' && (
+              <div className="space-y-2">
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Docker Configuration</h4>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <p>Use this docker-compose.yml to set up a local instance of {formData.type === 'milvus' ? 'Milvus' : 'Qdrant'}.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="bg-muted p-2 rounded-md text-xs font-mono overflow-auto max-h-40">
+                  {formData.type === 'milvus' ? DEFAULT_MILVUS_DOCKER : DEFAULT_QDRANT_DOCKER}
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleTestConnection}
+                disabled={isLoading}
+                className="flex items-center gap-1"
+              >
+                {isLoading ? (
+                  <Progress value={80} className="w-4 h-4 animate-spin" />
+                ) : null}
+                Test Connection
+              </Button>
+              
+              {testStatus === 'success' && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Connection successful
+                </Badge>
+              )}
+              
+              {testStatus === 'error' && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  Connection failed
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={testBackendConnection} 
-            variant="outlined"
-            disabled={isTestingConnection}
-          >
-            Retry Test
-          </Button>
-          <Button onClick={() => setShowConnectionDialog(false)}>
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Vector Database</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p>Are you sure you want to delete the vector database configuration "{currentConfig?.name}"?</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will only remove the configuration, not the actual database or its data.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
-};  
+};
