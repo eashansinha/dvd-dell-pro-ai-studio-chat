@@ -3,20 +3,23 @@ psycopg2-binary==2.9.9
 pgvector==0.2.3
 
 # Embeddings and LLM
-langchain==0.3.19
-langchain-community==0.0.14
-langchain-openai==0.0.5
-tiktoken==0.5.2
+langchain==0.3.27
+langchain-community==0.3.21
+langchain-openai==0.3.12
+tiktoken==0.9.0
 
 # PDF processing
-PyMuPDF==1.23.22
+PyMuPDF==1.23.8
 langchain-text-splitters==0.0.31
 
 # Utilities
-tqdm==4.66.2
+tqdm==4.66.1
 requests==2.31.0
 numpy==1.26.4
-python-dotenv==1.0.0
+python-dotenv==1.1.0
 
 # Testing
-pytest==7.4.3 
+pytest==7.4.3
+
+# OpenAI
+openai==1.100.2   

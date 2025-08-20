@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+import logging
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -23,9 +23,14 @@ else:
     # Ensure we have at least one origin
     if not CORS_ORIGINS:
         CORS_ORIGINS = ["*"]  # Default fallback
-    
-    # Debug log the origins
-    print(f"CORS Origins: {CORS_ORIGINS}")
+
+# Logging Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+logger.info(f"CORS Origins: {CORS_ORIGINS}")
 
 # Vector Database - PGVector Settings
 PGVECTOR_CONNECTION_STRING = os.getenv("PGVECTOR_CONNECTION_STRING", "postgresql://postgres:postgres@localhost:5432/vectordb")
@@ -43,4 +48,4 @@ EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "nomic-embed-text")
 
 # Feature flags for enabling/disabling specific vector stores
 ENABLE_PGVECTOR = os.getenv("ENABLE_PGVECTOR", "true").lower() == "true"
-ENABLE_PINECONE = os.getenv("ENABLE_PINECONE", "false").lower() == "true" 
+ENABLE_PINECONE = os.getenv("ENABLE_PINECONE", "false").lower() == "true"  

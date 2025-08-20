@@ -1,4 +1,3 @@
-from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
 
@@ -11,22 +10,22 @@ class VectorStore(BaseModel):
     id: str
     name: str
     type: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class Collection(BaseModel):
     id: str
     name: str
-    description: Optional[str] = None
-    tags: List[str] = []
+    description: str | None = None
+    tags: list[str] = []
 
 
 class DocumentMetadata(BaseModel):
     documentId: str
     documentName: str
     chunkId: str
-    chunkIndex: Optional[int] = None
-    tags: Optional[List[str]] = None
+    chunkIndex: int | None = None
+    tags: list[str] | None = None
     
 
 class DocumentResponse(BaseModel):
@@ -41,6 +40,6 @@ class DocumentResponse(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     k: int = 5
-    backend_ids: Optional[List[str]] = None
-    collection_ids: Optional[List[str]] = None
-    tags: Optional[List[str]] = None 
+    backend_ids: list[str] | None = None
+    collection_ids: list[str] | None = None
+    tags: list[str] | None = None   
