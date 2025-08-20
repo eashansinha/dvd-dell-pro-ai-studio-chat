@@ -41,6 +41,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "dpais")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "http://localhost:8553/v1")
 EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "nomic-embed-text")
 
+# Vector Database - Qdrant Settings
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
+QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "documents")
+
 # Feature flags for enabling/disabling specific vector stores
 ENABLE_PGVECTOR = os.getenv("ENABLE_PGVECTOR", "true").lower() == "true"
-ENABLE_PINECONE = os.getenv("ENABLE_PINECONE", "false").lower() == "true" 
+ENABLE_PINECONE = os.getenv("ENABLE_PINECONE", "false").lower() == "true"
+ENABLE_QDRANT = os.getenv("ENABLE_QDRANT", "false").lower() == "true"   

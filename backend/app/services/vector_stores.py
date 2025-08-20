@@ -10,14 +10,33 @@ from langchain.embeddings.base import Embeddings
 from langchain_openai import OpenAIEmbeddings
 from app.config import OPENAI_API_KEY, OPENAI_API_BASE, EMBEDDINGS_MODEL
 
+
+class LangChainEmbeddingsWrapper(Embeddings):
+    """Wrapper to make our custom embeddings service compatible with LangChain"""
+    
+    def __init__(self, embeddings_service):
+        self.embeddings_service = embeddings_service
+    
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed search docs."""
+        return self.embeddings_service.embed_documents(texts)
+    
+    def embed_query(self, text: str) -> List[float]:
+        """Embed query text."""
+        return self.embeddings_service.embed_query(text)
+
 from app.config import (
     PGVECTOR_CONNECTION_STRING,
     PGVECTOR_TABLE_NAME,
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,
     PINECONE_INDEX,
+    QDRANT_URL,
+    QDRANT_API_KEY,
+    QDRANT_COLLECTION_NAME,
     ENABLE_PGVECTOR,
-    ENABLE_PINECONE
+    ENABLE_PINECONE,
+    ENABLE_QDRANT
 )
 from app.models.schema import VectorStore, Collection, DocumentResponse, DocumentMetadata
 from app.services.embeddings import embeddings_service
@@ -28,6 +47,7 @@ class VectorStoreService:
     
     def __init__(self):
         self.embeddings = embeddings_service
+        self.langchain_embeddings = LangChainEmbeddingsWrapper(embeddings_service)
         self.vector_stores: Dict[str, Any] = {}
         self.initialize_vector_stores()
         
@@ -44,6 +64,12 @@ class VectorStoreService:
                 self._init_pinecone()
             except Exception as e:
                 print(f"Failed to initialize Pinecone: {e}")
+                
+        if ENABLE_QDRANT:
+            try:
+                self._init_qdrant()
+            except Exception as e:
+                print(f"Failed to initialize Qdrant: {e}")
     
     def _init_pgvector(self) -> None:
         """Initialize PGVector store"""
@@ -118,6 +144,49 @@ class VectorStoreService:
             print("Pinecone initialized successfully")
         except Exception as e:
             print(f"Error initializing Pinecone: {e}")
+            raise
+    
+    def _init_qdrant(self) -> None:
+        """Initialize Qdrant store"""
+        try:
+            from langchain_qdrant import QdrantVectorStore
+            from qdrant_client import QdrantClient
+            
+            client = QdrantClient(
+                url=QDRANT_URL,
+                api_key=QDRANT_API_KEY if QDRANT_API_KEY else None
+            )
+            
+            # Check if collection exists, create if it doesn't
+            try:
+                collection_info = client.get_collection(QDRANT_COLLECTION_NAME)
+                print(f"Found existing Qdrant collection '{QDRANT_COLLECTION_NAME}' with {collection_info.points_count} points")
+            except Exception:
+                from qdrant_client.http.models import Distance, VectorParams
+                print(f"Creating new Qdrant collection '{QDRANT_COLLECTION_NAME}'")
+                client.create_collection(
+                    collection_name=QDRANT_COLLECTION_NAME,
+                    vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
+                )
+            
+            qdrant_store = QdrantVectorStore(
+                client=client,
+                collection_name=QDRANT_COLLECTION_NAME,
+                embedding=self.langchain_embeddings
+            )
+            
+            self.vector_stores["qdrant-1"] = {
+                "store": qdrant_store,
+                "info": {
+                    "id": "qdrant-1",
+                    "name": "Qdrant Vector DB",
+                    "type": "qdrant",
+                    "description": "High-performance vector database optimized for similarity search"
+                }
+            }
+            print("Qdrant initialized successfully")
+        except Exception as e:
+            print(f"Error initializing Qdrant: {e}")
             raise
     
     def get_vector_stores(self) -> List[VectorStore]:
@@ -216,6 +285,29 @@ class VectorStoreService:
                 pinecone_status["details"] = f"Failed to connect to Pinecone: {str(e)}"
             
             results["vector_stores"]["pinecone"] = pinecone_status
+        
+        if ENABLE_QDRANT and "qdrant-1" in self.vector_stores:
+            try:
+                from qdrant_client import QdrantClient
+                client = QdrantClient(
+                    url=QDRANT_URL,
+                    api_key=QDRANT_API_KEY if QDRANT_API_KEY else None
+                )
+                # Try to get collection info to verify connection
+                collection_info = client.get_collection(QDRANT_COLLECTION_NAME)
+                results["vector_stores"]["qdrant-1"] = {
+                    "status": "ok",
+                    "message": f"Connected to Qdrant collection '{QDRANT_COLLECTION_NAME}'",
+                    "details": {
+                        "total_vectors": collection_info.points_count,
+                        "dimension": collection_info.config.params.vectors.size
+                    }
+                }
+            except Exception as e:
+                results["vector_stores"]["qdrant-1"] = {
+                    "status": "error",
+                    "message": f"Qdrant connection failed: {str(e)}"
+                }
         
         # Set overall status
         has_errors = any(vs["status"] == "error" for vs in results["vector_stores"].values())
@@ -594,4 +686,4 @@ class VectorStoreService:
             return []
 
 # Create a singleton instance
-vector_store_service = VectorStoreService() 
+vector_store_service = VectorStoreService()                                
